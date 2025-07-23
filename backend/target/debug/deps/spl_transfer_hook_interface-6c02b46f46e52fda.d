@@ -1,9 +1,0 @@
-/Users/ahmed/Projects/solana-indexer/backend/target/debug/deps/libspl_transfer_hook_interface-6c02b46f46e52fda.rmeta: /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/lib.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/error.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/instruction.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/offchain.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/onchain.rs
-
-/Users/ahmed/Projects/solana-indexer/backend/target/debug/deps/spl_transfer_hook_interface-6c02b46f46e52fda.d: /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/lib.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/error.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/instruction.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/offchain.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/onchain.rs
-
-/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/lib.rs:
-/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/error.rs:
-/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/instruction.rs:
-/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/offchain.rs:
-/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spl-transfer-hook-interface-0.10.0/src/onchain.rs:
