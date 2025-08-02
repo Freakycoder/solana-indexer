@@ -18,7 +18,7 @@ use yellowstone_grpc_proto::{geyser::{ SubscribeRequest, SubscribeRequestFilterA
 
 // Common Solana program IDs
 const SYSTEM_PROGRAM: &str = "11111111111111111111111111111111";
-const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const ASSOCIATED_TOKEN_PROGRAM: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 #[tokio::main]
@@ -66,9 +66,9 @@ fn create_minimal_subscription() -> SubscribeRequest {
     );
     let mut accounts = HashMap::new();
     accounts.insert("all_accounts".to_string(), SubscribeRequestFilterAccounts{
-        account : vec![],
-        owner : vec![],
-        filters : vec![],
+        account : vec![], // here we give the specific address we want to monitor.
+        owner : vec![SPL_TOKEN_PROGRAM.to_string()], // we give the program IDs who owns the account
+        filters : vec![], // here we specify in depth account details to filter out precisely
         nonempty_txn_signature : None
     });
 
@@ -109,20 +109,19 @@ async fn listen_for_updates(
                 // The update_oneof field contains the actual data
                 if let Some(update_type) = &msg.update_oneof {
                     match update_type {
-                        yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Slot(
-                            slot,
-                        ) => {
-                            println!("New slot: {} (status: {:?})", slot.slot, slot.status);
-                        }
-                        yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Transaction(transaction) => {
-                            println!("new entry : {:?}", transaction.transaction);
-                        }
+                        // yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Slot(
+                        //     slot,
+                        // ) => {
+                        //     println!("New slot: {} (status: {:?})", slot.slot, slot.status);
+                        // }
+                        // yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Transaction(transaction) => {
+                        //     println!("new entry : {:?}", transaction.transaction);
+                        // }
                         yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Account(account) => {
                             if let Some(acc) = &account.account {
                                 println!("Account Update:");
-                                println!("  Pubkey: {}", bs58::encode(&acc.pubkey).into_string());
+                                println!("  Account Address: {}", bs58::encode(&acc.pubkey).into_string());
                                 println!("  Owner: {}", bs58::encode(&acc.owner).into_string());
-                                println!("  Lamports: {}", acc.lamports);
                                 println!("  Data length: {} bytes", acc.data.len());
                                 
                                 // Parse data based on owner program
@@ -144,7 +143,7 @@ async fn listen_for_updates(
 }
 
 fn parse_account_data(owner: &[u8], data: &[u8], _pubkey: &[u8]) {
-    let owner_str = bs58::encode(owner).into_string();
+    let owner_str = bs58::encode(owner).into_string(); // encoding from bytes to human readabe format.
     
     println!("  --- Parsing Account Data ---");
     println!("  Owner Program: {}", owner_str);
@@ -159,7 +158,7 @@ fn parse_account_data(owner: &[u8], data: &[u8], _pubkey: &[u8]) {
                 print_hex_data(data, 32);
             }
         },
-        TOKEN_PROGRAM => {
+        SPL_TOKEN_PROGRAM => {
             println!("  Type: SPL Token Account");
             parse_token_account_data(data);
         },
@@ -185,25 +184,15 @@ fn parse_token_account_data(data: &[u8]) {
         return;
     }
     
-    // SPL Token Account Layout (165 bytes total):
-    // 0-32: mint (32 bytes)
-    // 32-64: owner (32 bytes) 
-    // 64-72: amount (8 bytes, little endian)
-    // 72-76: delegate_option (4 bytes)
-    // 76-77: state (1 byte)
-    // 77-81: is_native_option (4 bytes)
-    // 81-89: delegated_amount (8 bytes)
-    // 89-121: close_authority_option (32 bytes)
-    
-    let mint = &data[0..32];
-    let owner = &data[32..64];
-    let amount = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
-    let state = data[76];
+    let mint = &data[0..31];
+    let owner = &data[32..63];
+    let lamports = u64::from_le_bytes(data[64..71].try_into().unwrap_or([0; 8]));
+    let state = data[108];
     
     println!("  Token Details:");
     println!("    Mint: {}", bs58::encode(mint).into_string());
-    println!("    Owner: {}", bs58::encode(owner).into_string());
-    println!("    Amount: {}", amount);
+    println!("    ATA Owner: {}", bs58::encode(owner).into_string());
+    println!("    Amount: {}", lamports);
     println!("    State: {}", match state {
         0 => "Uninitialized",
         1 => "Initialized", 
