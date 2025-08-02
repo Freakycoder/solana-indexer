@@ -186,13 +186,20 @@ fn parse_token_account_data(data: &[u8]) {
     
     let mint = &data[0..32];
     let owner = &data[32..64];
-    let lamports = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
+    let amount = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
     let state = data[108];
     
     println!("  Token Details:");
     println!("    Mint: {}", bs58::encode(mint).into_string());
     println!("    ATA Owner: {}", bs58::encode(owner).into_string());
-    println!("    Amount: {}", lamports);
+    println!("    Amount: {}", amount);
+    let human_readable_6_decimals = amount as f64 / 1_000_000.0;
+    let human_readable_8_decimals = amount as f64 / 100_000_000.0;
+    let human_readable_9_decimals = amount as f64 / 1_000_000_000.0;
+    
+    println!("    Amount (6 decimals): {}", human_readable_6_decimals);
+    println!("    Amount (8 decimals): {}", human_readable_8_decimals);
+    println!("    Amount (9 decimals): {}", human_readable_9_decimals);
     println!("    State: {}", match state {
         0 => "Uninitialized",
         1 => "Initialized", 
