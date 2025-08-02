@@ -184,9 +184,9 @@ fn parse_token_account_data(data: &[u8]) {
         return;
     }
     
-    let mint = &data[0..31];
-    let owner = &data[32..63];
-    let lamports = u64::from_le_bytes(data[64..71].try_into().unwrap_or([0; 8]));
+    let mint = &data[0..32];
+    let owner = &data[32..64];
+    let lamports = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
     let state = data[108];
     
     println!("  Token Details:");
