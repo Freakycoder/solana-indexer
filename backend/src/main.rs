@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use tokio_stream::StreamExt;
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
 use yellowstone_grpc_proto::{geyser::{ SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots}, tonic::metadata::Entry};
+
+use crate::entities::mint;
 pub mod entities;
 pub mod redis;
 
@@ -131,6 +133,7 @@ async fn listen_for_updates(
     Ok(())
 }
 
+
 fn parse_account_data(owner: &[u8], data: &[u8], _pubkey: &[u8]) {
     let owner_str = bs58::encode(owner).into_string(); // encoding from bytes to human readabe format.
     
@@ -167,9 +170,11 @@ fn parse_account_data(owner: &[u8], data: &[u8], _pubkey: &[u8]) {
     println!("");
 }
 
+
 fn parse_token_account_data(data: &[u8]) {
     if data.len() == 165 {
 
+        println!("---- TOKEN ACCOUNT DETECTED ----");
         let mint = &data[0..32];
         let owner = &data[32..64];
         let amount = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
@@ -180,11 +185,9 @@ fn parse_token_account_data(data: &[u8]) {
         println!("    ATA Owner: {}", bs58::encode(owner).into_string());
         println!("    Amount: {}", amount);
         let human_readable_6_decimals = amount as f64 / 1_000_000.0;
-        let human_readable_8_decimals = amount as f64 / 100_000_000.0;
         let human_readable_9_decimals = amount as f64 / 1_000_000_000.0;
         
         println!("    Amount (6 decimals): {}", human_readable_6_decimals);
-        println!("    Amount (8 decimals): {}", human_readable_8_decimals);
         println!("    Amount (9 decimals): {}", human_readable_9_decimals);
         println!("    State: {}", match state {
             0 => "Uninitialized",
@@ -194,8 +197,19 @@ fn parse_token_account_data(data: &[u8]) {
         });
     }
     else {
-        
-    }
+        println!("---- MINT ACCOUNT DETECTED ----");
+        let mint_authority  = &data[4..36]; // following fields are present in bytes representation
+        let supply  = u64::from_le_bytes(data[36..44].try_into().unwrap_or([0; 8])); // we didn't use unwarp over here bcoz it panics on Err and None. instead we gave default value by using unwrap_or
+        let decimal = u64::from_le_bytes(data[44..45].try_into().unwrap_or([0; 8])); // try_into converts the value attached to it into [u8;8] and is of Result<> type. we use unwrap as fallback incase try_into fails.
+        let is_initialized = data[45]; // if false stored as 0 and 1 as true.
+        let freeze_authority = &data[50..82];
+
+        println!("  Mint Authority : {}", bs58::encode(mint_authority).into_string());
+        println!("  Supply : {}", supply);
+        println!("  Decimal : {}", decimal);
+        println!("  Is Initialized : {}", is_initialized != 0);
+        println!("  Freeze Authority : {}", bs58::encode(freeze_authority).into_string());
+        }
     
 }
 
