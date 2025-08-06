@@ -1,20 +1,9 @@
-// Cargo.toml - Truly minimal dependencies
-//
-// [package]
-// name = "backend"
-// version = "0.1.0"
-// edition = "2021"
-//
-// [dependencies]
-// tokio = { version = "1.46.1", features = ["rt-multi-thread", "macros"] }
-// yellowstone-grpc-client = "8.0.0"
-// yellowstone-grpc-proto = "8.0.0"
-
 use futures::SinkExt;
 use std::collections::HashMap;
 use tokio_stream::StreamExt;
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
 use yellowstone_grpc_proto::{geyser::{ SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots}, tonic::metadata::Entry};
+pub mod entities;
 
 // Common Solana program IDs
 const SYSTEM_PROGRAM: &str = "11111111111111111111111111111111";
@@ -179,33 +168,35 @@ fn parse_account_data(owner: &[u8], data: &[u8], _pubkey: &[u8]) {
 }
 
 fn parse_token_account_data(data: &[u8]) {
-    if data.len() < 165 {
-        println!("  Data: Invalid token account (too short)");
-        return;
+    if data.len() == 165 {
+
+        let mint = &data[0..32];
+        let owner = &data[32..64];
+        let amount = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
+        let state = data[108];
+        
+        println!("  Token Details:");
+        println!("    Mint: {}", bs58::encode(mint).into_string());
+        println!("    ATA Owner: {}", bs58::encode(owner).into_string());
+        println!("    Amount: {}", amount);
+        let human_readable_6_decimals = amount as f64 / 1_000_000.0;
+        let human_readable_8_decimals = amount as f64 / 100_000_000.0;
+        let human_readable_9_decimals = amount as f64 / 1_000_000_000.0;
+        
+        println!("    Amount (6 decimals): {}", human_readable_6_decimals);
+        println!("    Amount (8 decimals): {}", human_readable_8_decimals);
+        println!("    Amount (9 decimals): {}", human_readable_9_decimals);
+        println!("    State: {}", match state {
+            0 => "Uninitialized",
+            1 => "Initialized", 
+            2 => "Frozen",
+            _ => "Unknown"
+        });
+    }
+    else {
+        
     }
     
-    let mint = &data[0..32];
-    let owner = &data[32..64];
-    let amount = u64::from_le_bytes(data[64..72].try_into().unwrap_or([0; 8]));
-    let state = data[108];
-    
-    println!("  Token Details:");
-    println!("    Mint: {}", bs58::encode(mint).into_string());
-    println!("    ATA Owner: {}", bs58::encode(owner).into_string());
-    println!("    Amount: {}", amount);
-    let human_readable_6_decimals = amount as f64 / 1_000_000.0;
-    let human_readable_8_decimals = amount as f64 / 100_000_000.0;
-    let human_readable_9_decimals = amount as f64 / 1_000_000_000.0;
-    
-    println!("    Amount (6 decimals): {}", human_readable_6_decimals);
-    println!("    Amount (8 decimals): {}", human_readable_8_decimals);
-    println!("    Amount (9 decimals): {}", human_readable_9_decimals);
-    println!("    State: {}", match state {
-        0 => "Uninitialized",
-        1 => "Initialized", 
-        2 => "Frozen",
-        _ => "Unknown"
-    });
 }
 
 fn print_hex_data(data: &[u8], max_bytes: usize) {
