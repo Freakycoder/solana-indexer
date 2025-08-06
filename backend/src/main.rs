@@ -2,11 +2,11 @@ use futures::SinkExt;
 use std::collections::HashMap;
 use tokio_stream::StreamExt;
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
-use yellowstone_grpc_proto::{geyser::{ SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots}, tonic::metadata::Entry};
+use yellowstone_grpc_proto::{geyser::{ SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots}};
 
-use crate::entities::mint;
 pub mod entities;
 pub mod redis;
+pub mod types;
 
 const SYSTEM_PROGRAM: &str = "11111111111111111111111111111111";
 const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
@@ -115,8 +115,11 @@ async fn listen_for_updates(
                                 println!("  Owner: {}", bs58::encode(&acc.owner).into_string());
                                 println!("  Data length: {} bytes", acc.data.len());
                                 
-                                // Parse data based on owner program
-                                parse_account_data(&acc.owner, &acc.data, &acc.pubkey);
+                                if acc.data.len() == 82 {
+                                    // Parse data based on owner program
+                                    parse_account_data(&acc.owner, &acc.data, &acc.pubkey);
+                                }
+
                             }
                         }
                         _ => {println!("got other updates...ignore.")}
@@ -200,7 +203,7 @@ fn parse_token_account_data(data: &[u8]) {
         println!("---- MINT ACCOUNT DETECTED ----");
         let mint_authority  = &data[4..36]; // following fields are present in bytes representation
         let supply  = u64::from_le_bytes(data[36..44].try_into().unwrap_or([0; 8])); // we didn't use unwarp over here bcoz it panics on Err and None. instead we gave default value by using unwrap_or
-        let decimal = u64::from_le_bytes(data[44..45].try_into().unwrap_or([0; 8])); // try_into converts the value attached to it into [u8;8] and is of Result<> type. we use unwrap as fallback incase try_into fails.
+        let decimal = &data[44];                                                             // try_into converts the value attached to it into [u8;8] and is of Result<> type. we use unwrap as fallback incase try_into fails.
         let is_initialized = data[45]; // if false stored as 0 and 1 as true.
         let freeze_authority = &data[50..82];
 
