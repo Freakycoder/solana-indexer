@@ -4,8 +4,8 @@ use tokio_stream::StreamExt;
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
 use yellowstone_grpc_proto::{geyser::{ SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots}, tonic::metadata::Entry};
 pub mod entities;
+pub mod redis;
 
-// Common Solana program IDs
 const SYSTEM_PROGRAM: &str = "11111111111111111111111111111111";
 const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const ASSOCIATED_TOKEN_PROGRAM: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
