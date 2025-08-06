@@ -6,7 +6,6 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub mint_address: String,
     
-    // JSON metadata fields
     #[sea_orm(column_type = "Text", nullable)]
     pub description: Option<String>,
     
@@ -26,17 +25,11 @@ pub struct Model {
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub properties: Option<Json>, // Additional properties
     
-    // Collection info
     #[sea_orm(column_type = "Text", nullable)]
     pub collection_name: Option<String>,
     
     #[sea_orm(column_type = "Text", nullable)]
     pub collection_family: Option<String>,
-    
-    // Tracking
-    pub last_fetched: Option<DateTime>,
-    pub fetch_attempts: i32,
-    pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 
