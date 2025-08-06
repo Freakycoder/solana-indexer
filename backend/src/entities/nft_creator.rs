@@ -12,7 +12,6 @@ pub struct Model{
     pub share: i16, // Percentage share (0-100)
     
     pub created_at: DateTime,
-    pub updated_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
