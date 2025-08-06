@@ -1,10 +1,6 @@
 use redis::{Client, AsyncCommands, RedisResult};
-use serde::{Deserialize, Serialize};
+use crate::types::mint::MintData;
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct SolanaData{
- pub address : String
-}
 pub struct RedisQueue{
     client : Client
 }
@@ -29,13 +25,13 @@ impl RedisQueue{
         Ok(queue_length)
     }
 
-    pub async fn dequeue_message(&self, queue_name : &str) -> RedisResult<Option<SolanaData>>{
+    pub async fn dequeue_message(&self, queue_name : &str) -> RedisResult<Option<MintData>>{
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let message_string : Option<String>  = conn.rpop(queue_name, None).await?;
 
         match message_string {
             Some(message) => {
-                match serde_json::from_str::<SolanaData>(&message) {
+                match serde_json::from_str::<MintData>(&message) {
                     Ok(message_string) => {
                         println!("message recieved and succesfully parsed");
                         Ok(Some(message_string))
