@@ -1,18 +1,21 @@
 use redis::{Client, AsyncCommands, RedisResult};
 use crate::types::mint::MintData;
 use solana_program::pubkey::Pubkey;
-use mpl_token_metadata::programs::MPL_TOKEN_METADATA_ID;
-use solana_client::rpc_client::{self, RpcClient};
+use mpl_token_metadata::{accounts::Metadata, programs::MPL_TOKEN_METADATA_ID};
+use solana_client::rpc_client::RpcClient;
+
 
 pub struct RedisQueue{
-    client : Client
+    client : Client,
+    rpc_client : RpcClient
 }
 
 impl RedisQueue{
-    pub fn new(&self, redis_client : Client) -> Self{
+    pub fn new(&self, redis_client : Client, rpc_url : String) -> Self{
         println!("Initializing redis queue...");
         Self{
-            client : redis_client
+            client : redis_client,
+            rpc_client : RpcClient::new(rpc_url)
         }
     }
 
@@ -51,11 +54,34 @@ impl RedisQueue{
         } 
     }
 
-    async fn get_metadeta_pda(mint_address : Pubkey){
+    async fn get_metadeta_pda(&self, mint_address : Pubkey) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>>{
 
         let meta_seeds = &[ b"metadata" , MPL_TOKEN_METADATA_ID.as_ref(), mint_address.as_ref() ];
         let (metadata_pda, _) = Pubkey::find_program_address(meta_seeds, &MPL_TOKEN_METADATA_ID);
 
-         let account = rpc_client.
+        match self.rpc_client.get_account(&metadata_pda){
+            Ok(account) => {
+                println!("Metadata account found");
+                println!("Data length {} bytes", account.data.len());
+
+                if account.owner == MPL_TOKEN_METADATA_ID {
+                    Ok(Some(account.data)) // we're returning vector of bytes
+                }
+                else {
+                    println!("But account not owned by metaplex program");
+                    Ok(None)
+                }
+            }
+            Err(_) => {
+                println!("No metadata account found");
+                Ok(None)
+            }
+        }
+    }
+
+    async fn parse_account_data(account_data : &[u8]){
+        println!("📋 Parsing metadata account ({} bytes)...", account_data.len());
+
+        let metadata = Metadata::try
     }
 }
