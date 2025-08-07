@@ -1,5 +1,8 @@
 use redis::{Client, AsyncCommands, RedisResult};
 use crate::types::mint::MintData;
+use solana_program::pubkey::Pubkey;
+use mpl_token_metadata::programs::MPL_TOKEN_METADATA_ID;
+use solana_client::rpc_client::{self, RpcClient};
 
 pub struct RedisQueue{
     client : Client
@@ -46,5 +49,13 @@ impl RedisQueue{
                 Ok(None)
             }
         } 
+    }
+
+    async fn get_metadeta_pda(mint_address : Pubkey){
+
+        let meta_seeds = &[ b"metadata" , MPL_TOKEN_METADATA_ID.as_ref(), mint_address.as_ref() ];
+        let (metadata_pda, _) = Pubkey::find_program_address(meta_seeds, &MPL_TOKEN_METADATA_ID);
+
+         let account = rpc_client.
     }
 }
