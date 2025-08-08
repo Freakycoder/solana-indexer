@@ -16,11 +16,6 @@ pub struct Model{
     pub update_authority : String,
     pub primary_sale_happened : bool,
     pub is_mutable : bool, // tells wheather the metadata can be changed or updated
-    #[sea_orm(column_type = "Text", nullable)]
-    pub token_standard : Option<String>,
-    #[sea_orm(column_type = "Text", nullable)]
-    pub collection : Option<String>,
-    pub uses : Option<String>,
     pub created_at : DateTime
 }
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
