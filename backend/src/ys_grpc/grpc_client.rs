@@ -1,9 +1,11 @@
 use std::collections::HashMap;
-use futures::SinkExt;
+use futures::fixSinkExt;
 use tokio_stream::StreamExt;
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
 use yellowstone_grpc_proto::geyser::{SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots};
 use crate::redis::queue_manager::RedisQueue;
+
+const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 pub struct GRPCclient {
     pub rpc_endpoint: String,
@@ -19,7 +21,7 @@ impl GRPCclient {
         }
     }
 
-    async fn connect_client(
+    async fn client_connection(
         &self,
     ) -> Result<
         GeyserGrpcClient<impl yellowstone_grpc_client::Interceptor>,
@@ -75,12 +77,12 @@ impl GRPCclient {
     }
 }
 
-async fn listen_for_updates(
+pub async fn listen_for_updates(
     &self
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting subscription...");
 
-    let mut client = self.connect_client().await?;
+    let mut client = self.client_connection().await?;
     let subscription = self.create_minimal_subscription();
 
     let (mut sink, mut stream) = client.subscribe().await?;
@@ -95,8 +97,7 @@ async fn listen_for_updates(
     // looping continously to get message from server.
     while let Some(update) = stream.next().await {
         match update {
-            Ok(msg) => { // basically when u recieve stream of data from validator u get in form of subcribeupdate. in which update_oneof contains the actual data
-                // The update_oneof field contains the actual data
+            Ok(msg) => { // basically when u recieve stream of data from validator u get in form of subcribeupdate, in which update_oneof contains the actual data
                 if let Some(update_type) = &msg.update_oneof {
                     match update_type {
                         yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Account(account) => {
@@ -107,8 +108,9 @@ async fn listen_for_updates(
                                 println!("  Data length: {} bytes", acc.data.len());
                                 
                                 if acc.data.len() == 82 {
-                                    // Parse data based on owner program
-                                    queue.dequeue_message("mint_data_queue").await;
+                                    let _ = queue.enqueue_message(&acc.data, &acc.owner, "mint_data_message", &acc.pubkey).await.map_err(|e| {
+                                        println!("Error pushing message to the queue due to {}",e);
+                                    });
                                 }
 
                             }
