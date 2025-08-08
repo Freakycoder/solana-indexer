@@ -5,21 +5,26 @@ use solana_client::rpc_client::RpcClient;
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
 pub struct RedisQueue {
-    client: Client,
+    redis_client: Client,
     rpc_client: RpcClient,
 }
 
 impl RedisQueue {
-    pub fn new(redis_client: Client, rpc_url: String) -> Self {
+    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
         println!("Initializing redis queue...");
-        Self {
-            client: redis_client,
-            rpc_client: RpcClient::new(rpc_url),
-        }
+
+        let redis_url = "redis://localhost:6379";
+
+        let redis_client = Client::open(redis_url)?;
+
+        Ok(Self {
+            redis_client,
+            rpc_client: RpcClient::new("https://api.mainnet-beta.solana.com"),
+        })
     }
 
     pub async fn enqueue_message(&self, data: &[u8], account_owner : Pubkey, queue_name: &str, mint_address_bytes: &[u8]) -> RedisResult<usize> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await?;
         
         let mint_authority  = bs58::encode(&data[4..36]).into_string(); // following fields are present in bytes representation
         let supply  = u64::from_le_bytes(data[36..44].try_into().unwrap_or([0; 8])); // we didn't use unwarp over here bcoz it panics on Err and None. instead we gave default value by using unwrap_or
@@ -51,7 +56,7 @@ impl RedisQueue {
     }
 
     pub async fn dequeue_message(&self, queue_name: &str) -> RedisResult<Option<MintData>> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let mut conn = self.redis_client.get_multiplexed_async_connection().await?;
         let message_string: Option<String> = conn.rpop(queue_name, None).await?;
 
         match message_string {
