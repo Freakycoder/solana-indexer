@@ -1,0 +1,129 @@
+use std::collections::HashMap;
+use futures::SinkExt;
+use tokio_stream::StreamExt;
+use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
+use yellowstone_grpc_proto::geyser::{SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots};
+use crate::redis::queue_manager::RedisQueue;
+
+pub struct GRPCclient {
+    pub rpc_endpoint: String,
+    pub token: String,
+}
+
+impl GRPCclient {
+    pub fn new(endpoint: String, token: String) -> Self {
+        println!("Initializing endpoints...");
+        Self {
+            rpc_endpoint: endpoint,
+            token: token,
+        }
+    }
+
+    async fn connect_client(
+        &self,
+    ) -> Result<
+        GeyserGrpcClient<impl yellowstone_grpc_client::Interceptor>,
+        Box<dyn std::error::Error>,
+    > {
+        println!("Connecting to PublicNode...");
+
+        let client = GeyserGrpcClient::build_from_shared(
+            "https://solana-yellowstone-grpc.publicnode.com:443".to_string(),
+        )?
+        .x_token(Some(
+            "6ecc6cb2afc5125f5073bc73b12cf7e75d1155ec5b52fedd7f1467dc9fe519b2".to_string(),
+        ))?
+        .tls_config(ClientTlsConfig::new().with_native_roots())?
+        .connect()
+        .await?;
+
+        println!("Connected!");
+        Ok(client)
+    }
+
+    fn create_minimal_subscription(&self) -> SubscribeRequest {
+    let mut slots = HashMap::new();
+    slots.insert(
+        "slots".to_string(),
+        SubscribeRequestFilterSlots {
+            filter_by_commitment: Some(true),
+            interslot_updates: None,
+        },
+    );
+    let mut accounts = HashMap::new();
+    accounts.insert("all_accounts".to_string(), SubscribeRequestFilterAccounts{
+        account : vec![], // here we give the specific address we want to monitor.
+        owner : vec![SPL_TOKEN_PROGRAM.to_string()], // we give the program IDs who owns the account
+        filters : vec![], // here we specify in depth account details to filter out precisely
+        nonempty_txn_signature : None
+    });
+
+    let commitment = Some(2);
+
+    SubscribeRequest {
+        slots,
+        accounts: accounts,
+        transactions: HashMap::new(),
+        transactions_status: HashMap::new(),
+        blocks: HashMap::new(),
+        blocks_meta: HashMap::new(),
+        entry: HashMap::new(),
+        commitment: commitment,
+        accounts_data_slice: vec![],
+        ping: None,
+        from_slot: None,
+    }
+}
+
+async fn listen_for_updates(
+    &self
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Starting subscription...");
+
+    let mut client = self.connect_client().await?;
+    let subscription = self.create_minimal_subscription();
+
+    let (mut sink, mut stream) = client.subscribe().await?;
+
+    // we get 2 objects from client subscription. sink used to sending the request object  and stream for receiving the requested data from grpc
+    sink.send(subscription).await?;
+
+    println!("Listening for Solana slot updates...\n");
+
+    let queue = RedisQueue::new().await?;
+
+    // looping continously to get message from server.
+    while let Some(update) = stream.next().await {
+        match update {
+            Ok(msg) => { // basically when u recieve stream of data from validator u get in form of subcribeupdate. in which update_oneof contains the actual data
+                // The update_oneof field contains the actual data
+                if let Some(update_type) = &msg.update_oneof {
+                    match update_type {
+                        yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Account(account) => {
+                            if let Some(acc) = &account.account {
+                                println!("Account Update:");
+                                println!("  Account Address: {}", bs58::encode(&acc.pubkey).into_string());
+                                println!("  Owner: {}", bs58::encode(&acc.owner).into_string());
+                                println!("  Data length: {} bytes", acc.data.len());
+                                
+                                if acc.data.len() == 82 {
+                                    // Parse data based on owner program
+                                    queue.dequeue_message("mint_data_queue").await;
+                                }
+
+                            }
+                        }
+                        _ => {println!("got other updates...ignore.")}
+                    }
+                }
+            }
+            Err(e) => {
+                println!("Stream error: {}", e);
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+}
