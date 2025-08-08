@@ -18,9 +18,29 @@ impl RedisQueue {
         }
     }
 
-    pub async fn enqueue_message(&self, message: &str, queue_name: &str) -> RedisResult<usize> {
+    pub async fn enqueue_message(&self, data: &[u8], account_owner : Pubkey, queue_name: &str, mint_address_bytes: &[u8]) -> RedisResult<usize> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let message_json = match serde_json::to_string(message) {
+        
+        let mint_authority  = bs58::encode(&data[4..36]).into_string(); // following fields are present in bytes representation
+        let supply  = u64::from_le_bytes(data[36..44].try_into().unwrap_or([0; 8])); // we didn't use unwarp over here bcoz it panics on Err and None. instead we gave default value by using unwrap_or
+        let decimal = data[44];                                                             // try_into converts the value attached to it into [u8;8] and is of Result<> type. we use unwrap as fallback incase try_into fails.
+        let is_initialized = data[45]; // if false stored as 0 and 1 as true.
+        let freeze_authority = bs58::encode(&data[50..82]).into_string();
+        let data_length = data.len();
+        let mint_address = bs58::encode(mint_address_bytes).into_string();
+
+        let mint_data = MintData {
+            mint_authority,
+            owner : account_owner.to_string(),
+            data_length,
+            decimal,
+            freeze_authority : Some(freeze_authority),
+            is_initialized : is_initialized != 0,
+            mint_address,
+            supply
+        };
+
+        let message_json = match serde_json::to_string(&mint_data) {
             Ok(mesage_string) => mesage_string,
             Err(_) => format!("Error serialing the message into string"),
         };
