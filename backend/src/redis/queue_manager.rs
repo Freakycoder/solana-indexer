@@ -52,7 +52,7 @@ impl RedisQueue {
         };
 
         let queue_length: usize = conn.lpush(queue_name, message_json).await?;
-        println!("pushed the message to the queue");
+        println!("Message pushed to the queue succesfully");
         Ok(queue_length)
     }
 
