@@ -23,7 +23,7 @@ impl RedisQueue {
         })
     }
 
-    pub async fn enqueue_message(&self, data: &[u8], account_owner : Pubkey, queue_name: &str, mint_address_bytes: &[u8]) -> RedisResult<usize> {
+    pub async fn enqueue_message(&self, data: &[u8], account_owner_bytes : &[u8], queue_name: &str, mint_address_bytes: &[u8]) -> RedisResult<usize> {
         let mut conn = self.redis_client.get_multiplexed_async_connection().await?;
         
         let mint_authority  = bs58::encode(&data[4..36]).into_string(); // following fields are present in bytes representation
@@ -33,10 +33,11 @@ impl RedisQueue {
         let freeze_authority = bs58::encode(&data[50..82]).into_string();
         let data_length = data.len();
         let mint_address = bs58::encode(mint_address_bytes).into_string();
+        let account_owner = bs58::encode(account_owner_bytes).into_string();
 
         let mint_data = MintData {
             mint_authority,
-            owner : account_owner.to_string(),
+            owner : account_owner,
             data_length,
             decimal,
             freeze_authority : Some(freeze_authority),
