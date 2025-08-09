@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use futures::fixSinkExt;
+use futures::SinkExt;
 use tokio_stream::StreamExt;
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
 use yellowstone_grpc_proto::geyser::{SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterSlots};
@@ -14,7 +14,7 @@ pub struct GRPCclient {
 
 impl GRPCclient {
     pub fn new(endpoint: String, token: String) -> Self {
-        println!("Initializing endpoints...");
+        println!("Initializing grpc endpoint along with token access...");
         Self {
             rpc_endpoint: endpoint,
             token: token,
@@ -30,10 +30,10 @@ impl GRPCclient {
         println!("Connecting to PublicNode...");
 
         let client = GeyserGrpcClient::build_from_shared(
-            "https://solana-yellowstone-grpc.publicnode.com:443".to_string(),
+            self.rpc_endpoint.to_string(),
         )?
         .x_token(Some(
-            "6ecc6cb2afc5125f5073bc73b12cf7e75d1155ec5b52fedd7f1467dc9fe519b2".to_string(),
+            self.token.to_string(),
         ))?
         .tls_config(ClientTlsConfig::new().with_native_roots())?
         .connect()
@@ -43,7 +43,7 @@ impl GRPCclient {
         Ok(client)
     }
 
-    fn create_minimal_subscription(&self) -> SubscribeRequest {
+    fn create_subscription(&self) -> SubscribeRequest {
     let mut slots = HashMap::new();
     slots.insert(
         "slots".to_string(),
@@ -59,6 +59,8 @@ impl GRPCclient {
         filters : vec![], // here we specify in depth account details to filter out precisely
         nonempty_txn_signature : None
     });
+
+    println!("Created subscription for the server.");
 
     let commitment = Some(2);
 
@@ -80,10 +82,10 @@ impl GRPCclient {
 pub async fn listen_for_updates(
     &self
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Starting subscription...");
-
+    
     let mut client = self.client_connection().await?;
-    let subscription = self.create_minimal_subscription();
+    let subscription = self.create_subscription();
+    println!("Starting to listen subscription for messages...");
 
     let (mut sink, mut stream) = client.subscribe().await?;
 
