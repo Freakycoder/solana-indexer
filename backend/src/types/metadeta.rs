@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Metadata{
-    pub metadata_address : String,
     pub mint_address : String,
+    pub metadata_address : String,
     pub name : String,
     pub symbol : String,
     pub uri : String,
