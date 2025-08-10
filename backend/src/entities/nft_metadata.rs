@@ -3,16 +3,19 @@ use serde::{Deserialize,Serialize};
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "nft_metadata")]
 pub struct Model{
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub metadata_address : String,
+    #[sea_orm(primary_key)]
+    pub id : Uuid,
+    #[sea_orm(unique)]
     pub mint_address : String,
+    #[sea_orm(unique)]
+    pub metadata_address : String,
     #[sea_orm(column_type = "Text")]
     pub name : String,
     #[sea_orm(column_type = "Text")]
     pub symbol : String,
     #[sea_orm(column_type = "Text")]
     pub uri : String,
-    pub seller_fee_basis_pioints : u16,
+    pub seller_fee_basis_points : u16,
     pub update_authority : String,
     pub primary_sale_happened : bool,
     pub is_mutable : bool, // tells wheather the metadata can be changed or updated
