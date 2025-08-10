@@ -10,7 +10,7 @@ use std::env;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
    
     dotenv().ok();
-    let grpc_client = GRPCclient::new(env::var("RPC_ENDPOINT").expect("failed to retrieve the rpc from env"), env::var("TOKEN").expect("failed to fetch token from env"));
+    let grpc_client = GRPCclient::new(env::var("RPC_ENDPOINT").expect("failed to retrieve the rpc from env"), env::var("RPC_TOKEN").expect("failed to fetch token from env"));
     
     grpc_client.listen_for_updates().await?;
 
