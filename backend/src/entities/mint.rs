@@ -6,7 +6,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub mint_address : String,
     pub decimal : u8,
-    pub supply : f64,
+    pub supply : u64,
     #[sea_orm(column_type = "Text", nullable)]
     pub mint_authority : Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
