@@ -5,29 +5,26 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "token_accounts")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub account_address: String,
-    
+    pub id : Uuid,
+    #[sea_orm(unique)]
+    pub token_address: String,
+    #[sea_orm(unique)]
     pub mint_address: String,
     pub owner: String,
-    pub amount: String, // Using String for u64
+    pub amount: u64,
     
     #[sea_orm(column_type = "Text", nullable)]
     pub delegate: Option<String>,
     
     pub delegated_amount: String,
-    pub state: i16, // 0 = Uninitialized, 1 = Initialized, 2 = Frozen
+    pub state: u8, // 0 = Uninitialized, 1 = Initialized, 2 = Frozen
     
     #[sea_orm(column_type = "Text", nullable)]
     pub close_authority: Option<String>,
     
     pub is_native: bool,
     pub rent_exempt_reserve: String,
-    
-    // Tracking
-    pub first_seen_slot: Option<i64>,
-    pub last_updated_slot: Option<i64>,
     pub created_at: DateTime,
-    pub updated_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
