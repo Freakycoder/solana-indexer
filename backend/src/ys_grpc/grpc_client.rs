@@ -92,7 +92,7 @@ pub async fn listen_for_updates(
     // we get 2 objects from client subscription. sink used to sending the request object  and stream for receiving the requested data from grpc
     sink.send(subscription).await?;
 
-    println!("Listening for Solana slot updates...\n");
+    println!("Listening for Solana Account updates...");
 
     let queue = RedisQueue::new().await?;
 
