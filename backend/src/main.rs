@@ -15,7 +15,7 @@ use axum::{
     Json, Router,
 };
 use dotenvy::dotenv;
-use sea_orm::{prelude::Uuid, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{prelude::Uuid, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
 use std::env;
 
 const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
@@ -23,6 +23,11 @@ const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
+    
+    // Setup database connection
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db: DatabaseConnection = Database::connect(database_url).await?;
+    
     let grpc_client = GRPCclient::new(
         env::var("RPC_ENDPOINT").expect("failed to retrieve the rpc from env"),
         env::var("RPC_TOKEN").expect("failed to fetch token from env"),
@@ -30,7 +35,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     grpc_client.listen_for_updates().await?;
 
-    let _app = Router::new().route("/details/:mint_id", get(get_details));
+    let app = Router::new()
+        .route("/details/:mint_id", get(get_details))
+        .with_state(db);
+        
+    let listener = tokio::net::TcpListener::bind("localhost:3001")
+        .await
+        .unwrap();
+    println!("The server is running at localhost:3001");
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
