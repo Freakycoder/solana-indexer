@@ -3,7 +3,9 @@ use serde::{Deserialize,Serialize};
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "mint")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
+    #[sea_orm(primary_key)]
+    pub id : Uuid,
+    #[sea_orm(unique)]
     pub mint_address : String,
     pub decimal : u8,
     pub supply : u64,
