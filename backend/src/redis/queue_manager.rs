@@ -64,11 +64,10 @@ impl RedisQueue {
             Some(message) => {
                 match serde_json::from_str::<MintData>(&message) {
                     Ok(mint_data) => {
-                        // CHNAGES TO BE MADE. REMOVE THE INTERNAL LOOPING. FIRST WE CALL DEQUEUE TO GET MINT INFO THEN WE GET METADATA INFO THEN WE GET CREATOR
                         Ok(Some(mint_data))
                     }
                     Err(e) => {
-                        println!("Failed to deserialize message {}", e);
+                        println!("Failed to deserialize mint message {}", e);
                         Ok(None)
                     }
                 }
@@ -77,11 +76,8 @@ impl RedisQueue {
         }
     }
 
-    async fn get_metadeta_pda_data(
-        &self,
-        mint_address: String,
-    ) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
-        let mint_pubkey = Pubkey::from_str(&mint_address).map_err(|e| {
+    pub fn get_metadata_pda_address(&self, mint_address : &str ) -> Result<Pubkey, Box<dyn std::error::Error>>{
+        let mint_pubkey = Pubkey::from_str(mint_address).map_err(|e| {
             println!("Inavlid pubkey parsing");
             format!("Invalid pubkey: {}", e)
         })?;
@@ -91,7 +87,15 @@ impl RedisQueue {
             MPL_TOKEN_METADATA_ID.as_ref(),
             mint_pubkey.as_ref(),
         ];
-        let (metadata_pda, _) = Pubkey::find_program_address(meta_seeds, &MPL_TOKEN_METADATA_ID);
+        let (metadata_pda, _) = Pubkey::find_program_address(meta_seeds, &MPL_TOKEN_METADATA_ID);  
+        Ok(metadata_pda)     
+    }
+
+    async fn get_metadeta_pda_data(
+        &self,
+        mint_address: String
+    ) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
+        let metadata_pda = self.get_metadata_pda_address(&mint_address)?;
 
         match self.rpc_client.get_account(&metadata_pda) {
             Ok(account) => {
@@ -114,8 +118,8 @@ impl RedisQueue {
 
     pub async fn parse_metadata_pda_data(
         &self,
-        metadata_address: String,
         mint_address: String,
+        metadata_address :Pubkey
     ) -> Result<Option<Metadata>, Box<dyn std::error::Error>> {
         let metadata_account_data = match self.get_metadeta_pda_data(mint_address).await {
             Ok(Some(data_byte)) => data_byte, // the return type is result of option, so we check for both some and none
@@ -127,7 +131,7 @@ impl RedisQueue {
         match MetadataAccount::safe_deserialize(&metadata_account_data) {
             Ok(metadeta) => Ok(Some(Metadata {
                 mint_address: metadeta.mint.to_string(),
-                metadata_address: metadata_address,
+                metadata_address : metadata_address.to_string(),
                 name: metadeta.name,
                 symbol: metadeta.symbol,
                 uri: metadeta.uri,
