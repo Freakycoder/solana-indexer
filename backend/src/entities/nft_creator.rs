@@ -4,8 +4,7 @@ use serde::{Deserialize,Serialize};
 #[sea_orm(table_name = "nft_creator")]
 pub struct Model{
     #[sea_orm(primary_key)]
-    pub id: i32,
-    
+    pub id: Uuid,
     pub metadata_address: String, // Foreign key to nft_metadata
     pub creator_address: String,
     pub verified: bool,
