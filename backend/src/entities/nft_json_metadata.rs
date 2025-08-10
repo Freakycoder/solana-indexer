@@ -3,7 +3,9 @@ use serde::{Deserialize,Serialize};
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "nft_json_metadata")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
+    #[sea_orm(primary_key)]
+    pub id : Uuid,
+    #[sea_orm(unique)]
     pub mint_address: String,
     
     #[sea_orm(column_type = "Text", nullable)]
