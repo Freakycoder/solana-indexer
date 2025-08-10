@@ -14,8 +14,17 @@ pub struct QueueWorker {
 }
 
 impl QueueWorker {
+
+    pub fn new(queue : RedisQueue, db : DatabaseConnection) -> Self{
+        println!("initializing queue and db connection for worker to work on...");
+        Self {
+            queue,
+            db
+        }
+    }
     pub async fn start_processing(&self) {
         loop {
+            println!("Started to process to the queue messages...");
             match self.queue.dequeue_message("mint_data_messsage").await {
                 Ok(Some(data)) => {
                     println!("Recived mint data from the queue");
@@ -107,7 +116,7 @@ impl QueueWorker {
             name: Set(metadata_data.name),
             symbol: Set(metadata_data.symbol),
             uri: Set(metadata_data.uri),
-            seller_fee_basis_pioints: Set(metadata_data.seller_fee_basis_points),
+            seller_fee_basis_points: Set(metadata_data.seller_fee_basis_points),
             update_authority: Set(metadata_data.update_authority),
             primary_sale_happened: Set(metadata_data.primary_sale_happened),
             is_mutable: Set(metadata_data.is_mutable),
