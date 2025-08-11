@@ -1,9 +1,11 @@
 pub mod entities;
-pub mod handler;
 pub mod redis;
 pub mod types;
 pub mod ys_grpc;
+pub mod elasticsearch;
 use crate::entities::mint;
+use crate::redis::queue_manager::RedisQueue;
+use crate::redis::worker::QueueWorker;
 use crate::{
     entities::nft_metadata,
     types::mint::{MintResponse, PartialMetadata},
@@ -24,16 +26,18 @@ const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     
-    // Setup database connection
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let db: DatabaseConnection = Database::connect(database_url).await?;
+    let queue = RedisQueue::new().await?;
+    let worker = QueueWorker::new(queue, db.clone()); // here we initialized worker and queue
     
     let grpc_client = GRPCclient::new(
         env::var("RPC_ENDPOINT").expect("failed to retrieve the rpc from env"),
         env::var("RPC_TOKEN").expect("failed to fetch token from env"),
-    );
+    ); // the client is also initialized
 
-    grpc_client.listen_for_updates().await?;
+    grpc_client.listen_for_updates().await?; // the client is up & ready and waiting for messages to push to queue
+    worker.start_processing().await; // message ready to be extracted from queue and be processed.
 
     let app = Router::new()
         .route("/details/:mint_id", get(get_details))
