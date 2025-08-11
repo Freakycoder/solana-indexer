@@ -1,7 +1,5 @@
-use serde::{Deserialize, Serialize};
 use elasticsearch::{http::transport::Transport, Elasticsearch};
 use serde_json::json;
-use tonic::metadata::errors;
 
 #[derive(Debug, Clone)]
 pub struct ElasticSearchClient{
@@ -27,17 +25,17 @@ impl ElasticSearchClient {
                 }
             }
             Err(e) => {
-                println!("Error connecting to ElasticSearch");
+                println!("Error connecting to ElasticSearch {}", e);
             }
         }
 
-        Self {
+        let client_connection = Self {
             client : client,
             index_name : index_name.to_string()
-        }
+        };
 
-        // then we check if index exist using the below fn.
-
+        client_connection.set_up_index().await?;
+        Ok(client_connection)
     }
 
     async fn set_up_index (&self) -> Result<(), elasticsearch::Error>{
