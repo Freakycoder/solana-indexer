@@ -44,14 +44,14 @@ impl ElasticSearchClient {
 
     async fn set_up_index (&self) -> Result<(), elasticsearch::Error>{
         let mapping = json!({
-            "mapping" : {
+            "mappings" : {
                 "properties" : {
                     "mint_address" : {
                         "type" : "keyword"
                     },
                     "collection_name" : {
                         "type" : "text",
-                        "field" : {
+                        "fields" : {
                             "keyword" : {
                                 "type" : "keyword"
                             }
