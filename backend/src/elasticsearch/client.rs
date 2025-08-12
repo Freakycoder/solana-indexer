@@ -1,7 +1,6 @@
 use core::fmt;
 use std::error::Error;
 use elasticsearch::{http::transport::Transport, Elasticsearch, IndexParts, SearchParts};
-use futures::future::ok;
 use serde_json::{json, Value};
 
 use crate::types::{elasticsearch::{SearchResponse, SearchResult}, mint::NftDoc};
@@ -127,7 +126,35 @@ impl ElasticSearchClient {
         }
     }
 
-    pub async fn search_collection_name(&self, query : &str, size : i64) -> Result<(), ElasticSearchError>{
+    pub async fn search_by_mint_address(&self , mint_address : &str, size : i64) -> Result<SearchResponse, ElasticSearchError>{
+        let search_query  = json!({
+            "query" : {
+                "term" : {
+                    "mint_address" : mint_address
+                }
+            }
+        });
+
+        let response = self.client
+        .search(SearchParts::Index(&[&self.index_name]))
+        .body(search_query)
+        .size(size)
+        .send()
+        .await
+        .map_err(|e| ElasticSearchError::SearchError(format!("Error searching for mint_address {}",e)))?;
+
+        if response.status_code().is_success(){
+            println!("recieved search results for specified mint");
+            println!("sending the results for parsing...");
+            let response_json : Value = response.json().await.map_err(|e| ElasticSearchError::SearchError(format!("Error converting the mint search results into json {}",e)))?;
+            self.parse_response_data(response_json)
+        }
+        else {
+            Err(ElasticSearchError::SearchError(format!("Search response not succesfull for mint address")))
+        }
+    }
+
+    pub async fn search_by_collection_name(&self, query : &str, size : i64) -> Result<SearchResponse, ElasticSearchError>{
         let search_query = json!({
             "query" : {
                 "match" : {
@@ -154,13 +181,13 @@ impl ElasticSearchClient {
         .map_err(|e| ElasticSearchError::SearchError(format!("Failed to search for the text {}",e)))?;
 
         if search_response.status_code().is_success(){
-            println!("Succesfully recieved searched response for the query.");
+            println!("Succesfully recieved searched response for the collection name");
             println!("Sending it for parsing the response...");
             let search_json : Value  = search_response.json().await.map_err(|e| ElasticSearchError::SearchError(format!("Error converting search result into JSON {}", e)))?;
-            self.parse_response_data(search_json);
+            self.parse_response_data(search_json)
         }
         else {
-            
+            Err(ElasticSearchError::SearchError(format!("Unable to parse the search response for collection name")))
         }
     }
 
@@ -179,7 +206,6 @@ impl ElasticSearchClient {
         }).collect(); // this fn collects all the some(value) from the iterator and turns them into vec<T> or Hashmap<T>
 
         Ok(SearchResponse { results: search_result_array })
-    
     }
 }
 
