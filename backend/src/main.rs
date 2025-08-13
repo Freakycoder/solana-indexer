@@ -3,6 +3,7 @@ pub mod redis;
 pub mod types;
 pub mod ys_grpc;
 pub mod elasticsearch;
+use crate::elasticsearch::client::ElasticSearchClient;
 use crate::entities::mint;
 use crate::redis::queue_manager::RedisQueue;
 use crate::redis::worker::QueueWorker;
@@ -26,10 +27,11 @@ const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     
+    let elasticsearch = ElasticSearchClient::new(env::var("ELASTICSEARCH_URL").expect("failed to get es_url from env"), env::var("ELASTICSEARCH_INDEX_NAME").expect("failed to get index name from env")).await.expect("Error creating a elasticsearch client");
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let db: DatabaseConnection = Database::connect(database_url).await?;
     let queue = RedisQueue::new().await?;
-    let worker = QueueWorker::new(queue, db.clone()); // here we initialized worker and queue
+    let worker = QueueWorker::new(queue, db.clone(), elasticsearch); // here we initialized worker and queue
     
     let grpc_client = GRPCclient::new(
         env::var("RPC_ENDPOINT").expect("failed to retrieve the rpc from env"),
