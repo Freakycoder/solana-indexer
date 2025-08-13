@@ -1,8 +1,10 @@
 use std::thread::sleep;
 use std::time::Duration;
 
+use crate::elasticsearch::client::ElasticSearchClient;
 use crate::entities::mint::{ActiveModel, Model};
 use crate::entities::nft_metadata::{ActiveModel as NftActiveModel, Model as NftModel};
+use crate::types::elasticsearch::NftDoc;
 use crate::types::metadeta::Metadata;
 use crate::{redis::queue_manager::RedisQueue, types::mint::MintData};
 use sea_orm::Set;
@@ -11,15 +13,17 @@ use solana_program::pubkey::Pubkey;
 pub struct QueueWorker {
     queue: RedisQueue,
     db: DatabaseConnection,
+    elasticsearch_client : ElasticSearchClient
 }
 
 impl QueueWorker {
 
-    pub fn new(queue : RedisQueue, db : DatabaseConnection) -> Self{
+    pub fn new(queue : RedisQueue, db : DatabaseConnection, client : ElasticSearchClient) -> Self{
         println!("initializing queue and db connection for worker to work on...");
         Self {
             queue,
-            db
+            db,
+            elasticsearch_client: client
         }
     }
     pub async fn start_processing(&self) {
@@ -67,12 +71,17 @@ impl QueueWorker {
                         .save_metadata_to_db(
                             metadata_data,
                             metadata_pda_address,
-                            mint_data.mint_address,
+                            mint_data.mint_address.clone(),
                         )
                         .await
                     {
                         Ok(_) => {
-                            println!("Sucessfully saved metadata to db")
+                            println!("Sucessfully saved metadata to db");
+                            let nft_doc = NftDoc {
+                                mint_address : mint_data.mint_address,
+                                nft_name : metadata_data.name
+                            };
+                            self.elasticsearch_client.create_nft_index(nft_doc).await;
                         }
                         Err(e) => {
                             println!("Error saving metadata to db {}", e)
