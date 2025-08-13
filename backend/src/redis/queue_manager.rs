@@ -23,12 +23,18 @@ impl RedisQueue {
         })
     }
 
-    pub async fn enqueue_message(&self, data: &[u8], account_owner_bytes : &[u8], queue_name: &str, mint_address_bytes: &[u8]) -> RedisResult<usize> {
+    pub async fn enqueue_message(
+        &self,
+        data: &[u8],
+        account_owner_bytes: &[u8],
+        queue_name: &str,
+        mint_address_bytes: &[u8],
+    ) -> RedisResult<usize> {
         let mut conn = self.redis_client.get_multiplexed_async_connection().await?;
-        
-        let mint_authority  = bs58::encode(&data[4..36]).into_string(); // following fields are present in bytes representation
-        let supply  = u64::from_le_bytes(data[36..44].try_into().unwrap_or([0; 8])); // we didn't use unwarp over here bcoz it panics on Err and None. instead we gave default value by using unwrap_or
-        let decimal = data[44];                                                             // try_into converts the value attached to it into [u8;8] and is of Result<> type. we use unwrap as fallback incase try_into fails.
+
+        let mint_authority = bs58::encode(&data[4..36]).into_string(); // following fields are present in bytes representation
+        let supply = u64::from_le_bytes(data[36..44].try_into().unwrap_or([0; 8])); // we didn't use unwarp over here bcoz it panics on Err and None. instead we gave default value by using unwrap_or
+        let decimal = data[44]; // try_into converts the value attached to it into [u8;8] and is of Result<> type. we use unwrap as fallback incase try_into fails.
         let is_initialized = data[45]; // if false stored as 0 and 1 as true.
         let freeze_authority = bs58::encode(&data[50..82]).into_string();
         let data_length = data.len();
@@ -37,13 +43,13 @@ impl RedisQueue {
 
         let mint_data = MintData {
             mint_authority,
-            owner : account_owner,
+            owner: account_owner,
             data_length,
             decimal,
-            freeze_authority : Some(freeze_authority),
-            is_initialized : is_initialized != 0,
+            freeze_authority: Some(freeze_authority),
+            is_initialized: is_initialized != 0,
             mint_address,
-            supply
+            supply,
         };
 
         let message_json = match serde_json::to_string(&mint_data) {
@@ -61,22 +67,21 @@ impl RedisQueue {
         let message_string: Option<String> = conn.rpop(queue_name, None).await?;
 
         match message_string {
-            Some(message) => {
-                match serde_json::from_str::<MintData>(&message) {
-                    Ok(mint_data) => {
-                        Ok(Some(mint_data))
-                    }
-                    Err(e) => {
-                        println!("Failed to deserialize mint message {}", e);
-                        Ok(None)
-                    }
+            Some(message) => match serde_json::from_str::<MintData>(&message) {
+                Ok(mint_data) => Ok(Some(mint_data)),
+                Err(e) => {
+                    println!("Failed to deserialize mint message {}", e);
+                    Ok(None)
                 }
-            }
+            },
             None => Ok(None),
         }
     }
 
-    pub fn get_metadata_pda_address(&self, mint_address : &str ) -> Result<Pubkey, Box<dyn std::error::Error>>{
+    pub fn get_metadata_pda_address(
+        &self,
+        mint_address: &str,
+    ) -> Result<Pubkey, Box<dyn std::error::Error>> {
         let mint_pubkey = Pubkey::from_str(mint_address).map_err(|e| {
             println!("Inavlid pubkey parsing");
             format!("Invalid pubkey: {}", e)
@@ -87,13 +92,13 @@ impl RedisQueue {
             MPL_TOKEN_METADATA_ID.as_ref(),
             mint_pubkey.as_ref(),
         ];
-        let (metadata_pda, _) = Pubkey::find_program_address(meta_seeds, &MPL_TOKEN_METADATA_ID);  
-        Ok(metadata_pda)     
+        let (metadata_pda, _) = Pubkey::find_program_address(meta_seeds, &MPL_TOKEN_METADATA_ID);
+        Ok(metadata_pda)
     }
 
     async fn get_metadeta_pda_data(
         &self,
-        mint_address: String
+        mint_address: String,
     ) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
         let metadata_pda = self.get_metadata_pda_address(&mint_address)?;
 
@@ -119,7 +124,7 @@ impl RedisQueue {
     pub async fn parse_metadata_pda_data(
         &self,
         mint_address: String,
-        metadata_address :Pubkey
+        metadata_address: Pubkey,
     ) -> Result<Option<Metadata>, Box<dyn std::error::Error>> {
         let metadata_account_data = match self.get_metadeta_pda_data(mint_address).await {
             Ok(Some(data_byte)) => data_byte, // the return type is result of option, so we check for both some and none
@@ -129,19 +134,68 @@ impl RedisQueue {
         println!("📋 Parsing metadata account...");
 
         match MetadataAccount::safe_deserialize(&metadata_account_data) {
-            Ok(metadeta) => Ok(Some(Metadata {
-                mint_address: metadeta.mint.to_string(),
-                metadata_address : metadata_address.to_string(),
-                name: metadeta.name,
-                symbol: metadeta.symbol,
-                uri: metadeta.uri,
-                seller_fee_basis_points: metadeta.seller_fee_basis_points,
-                token_standard : metadeta.token_standard,
-                collection : metadeta.collection,
-                update_authority: metadeta.update_authority.to_string(),
-                primary_sale_happened: metadeta.primary_sale_happened,
-                is_mutable: metadeta.is_mutable,
-            })),
+            Ok(metadeta) => {
+                if let Some(collection_data) = metadeta.collection {
+                    let collection_nft_mint = collection_data.key.to_string();
+                    let collection_nft_data =
+                        match self.get_metadeta_pda_data(collection_nft_mint).await {
+                            Ok(Some(data_byte)) => data_byte,
+                            Ok(None) => return Ok(None),
+                            Err(e) => return Err(e),
+                        };
+
+                    match MetadataAccount::safe_deserialize(&collection_nft_data) {
+                        Ok(full_metadata) => {
+                            println!("Succesfully parsed the collection nft metadata and adding collection_name");
+
+                            return Ok(Some(Metadata {
+                                mint_address: metadeta.mint.to_string(),
+                                metadata_address: metadata_address.to_string(),
+                                name: metadeta.name,
+                                symbol: metadeta.symbol,
+                                uri: metadeta.uri,
+                                seller_fee_basis_points: metadeta.seller_fee_basis_points,
+                                token_standard: metadeta.token_standard,
+                                collection: Some(full_metadata.name),
+                                update_authority: metadeta.update_authority.to_string(),
+                                primary_sale_happened: metadeta.primary_sale_happened,
+                                is_mutable: metadeta.is_mutable,
+                            }));
+                        }
+                        Err(e) => {
+                            println!("Error deserailzing the collection nft metadata {} ...sending without collection name.", e);
+
+                            return Ok(Some(Metadata {
+                                mint_address: metadeta.mint.to_string(),
+                                metadata_address: metadata_address.to_string(),
+                                name: metadeta.name,
+                                symbol: metadeta.symbol,
+                                uri: metadeta.uri,
+                                seller_fee_basis_points: metadeta.seller_fee_basis_points,
+                                token_standard: metadeta.token_standard,
+                                collection: None,
+                                update_authority: metadeta.update_authority.to_string(),
+                                primary_sale_happened: metadeta.primary_sale_happened,
+                                is_mutable: metadeta.is_mutable,
+                            }));
+                        }
+                    }
+                }
+
+                Ok(Some(Metadata {
+                    mint_address: metadeta.mint.to_string(),
+                    metadata_address: metadata_address.to_string(),
+                    name: metadeta.name,
+                    symbol: metadeta.symbol,
+                    uri: metadeta.uri,
+                    seller_fee_basis_points: metadeta.seller_fee_basis_points,
+                    token_standard: metadeta.token_standard,
+                    collection: None,
+                    update_authority: metadeta.update_authority.to_string(),
+                    primary_sale_happened: metadeta.primary_sale_happened,
+                    is_mutable: metadeta.is_mutable,
+                }))
+            },
             Err(_) => Ok(None),
         }
     }
