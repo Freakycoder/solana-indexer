@@ -96,7 +96,7 @@ impl RedisQueue {
         Ok(metadata_pda)
     }
 
-    async fn get_metadeta_pda_data(
+    fn get_metadeta_pda_data(
         &self,
         mint_address: String,
     ) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
@@ -126,7 +126,7 @@ impl RedisQueue {
         mint_address: String,
         metadata_address: Pubkey,
     ) -> Result<Option<Metadata>, Box<dyn std::error::Error>> {
-        let metadata_account_data = match self.get_metadeta_pda_data(mint_address).await {
+        let metadata_account_data = match self.get_metadeta_pda_data(mint_address){
             Ok(Some(data_byte)) => data_byte, // the return type is result of option, so we check for both some and none
             Ok(None) => return Ok(None),
             Err(e) => return Err(e),
@@ -138,7 +138,7 @@ impl RedisQueue {
                 if let Some(collection_data) = metadeta.collection {
                     let collection_nft_mint = collection_data.key.to_string();
                     let collection_nft_data =
-                        match self.get_metadeta_pda_data(collection_nft_mint).await {
+                        match self.get_metadeta_pda_data(collection_nft_mint){
                             Ok(Some(data_byte)) => data_byte,
                             Ok(None) => return Ok(None),
                             Err(e) => return Err(e),
