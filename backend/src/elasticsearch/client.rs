@@ -5,7 +5,7 @@ use std::error::Error;
 
 use crate::types::{
     elasticsearch::{SearchResponse, SearchResult},
-    mint::NftDoc,
+    elasticsearch::NftDoc,
 };
 
 #[derive(Debug, Clone)]
@@ -16,10 +16,10 @@ pub struct ElasticSearchClient {
 
 impl ElasticSearchClient {
     pub async fn new(
-        elasticsearch_url: &str,
-        index_name: &str,
+        elasticsearch_url: String,
+        index_name: String,
     ) -> Result<Self, elasticsearch::Error> {
-        let transport = Transport::single_node(elasticsearch_url).map_err(|es_error| {
+        let transport = Transport::single_node(&elasticsearch_url).map_err(|es_error| {
             println!("failed to create transport {}", es_error);
             es_error
         })?; // first we assure transport layer works.
@@ -209,7 +209,7 @@ impl ElasticSearchClient {
                 let score = &hit["_score"];
                 Some(SearchResult {
                     mint_address: source["mint_address"].as_str()?.to_string(), // if mint_address exist then as_str converts it into string reference followed by string conversion(owned). if doesn't exist then as_str return None.
-                    collection_name: source["collection_name"].as_str()?.to_string(),
+                    nft_name: source["collection_name"].as_str()?.to_string(),
                     score: score.as_f64().unwrap_or(0.0),
                 })
             })
