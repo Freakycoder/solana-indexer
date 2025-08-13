@@ -137,6 +137,7 @@ impl RedisQueue {
                 uri: metadeta.uri,
                 seller_fee_basis_points: metadeta.seller_fee_basis_points,
                 token_standard : metadeta.token_standard,
+                collection : metadeta.collection,
                 update_authority: metadeta.update_authority.to_string(),
                 primary_sale_happened: metadeta.primary_sale_happened,
                 is_mutable: metadeta.is_mutable,
