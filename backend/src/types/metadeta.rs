@@ -1,4 +1,4 @@
-use mpl_token_metadata::types::TokenStandard;
+use mpl_token_metadata::types::{TokenStandard};
 
 #[derive(Debug, Clone)]
 pub struct Metadata{
@@ -10,6 +10,7 @@ pub struct Metadata{
     pub seller_fee_basis_points : u16,
     pub update_authority : String,
     pub token_standard : Option<TokenStandard>,
+    pub collection : Option<String>,
     pub primary_sale_happened : bool,
     pub is_mutable : bool,
 }
