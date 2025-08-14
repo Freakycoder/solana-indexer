@@ -34,9 +34,3 @@ pub struct PartialMetadata{
     pub primary_sale_happened : bool,
     pub is_mutable : bool,
 }
-
-#[derive(Debug, Clone,Serialize, Deserialize)]
-pub struct NftDoc{
-    pub mint_address : String,
-    pub collection_name : String
-}
