@@ -19,7 +19,7 @@ pub struct QueueWorker {
 impl QueueWorker {
 
     pub fn new(queue : RedisQueue, db : DatabaseConnection, client : ElasticSearchClient) -> Self{
-        println!("initializing queue and db connection for worker to work on...");
+        println!("initializing queue, db connection and es_client for worker to work on...");
         Self {
             queue,
             db,
@@ -67,6 +67,7 @@ impl QueueWorker {
                     println!("Successfully parsed metadata bytes");
                     println!("PDA metadata : {:?}",metadata_data);
                     println!("Saving the metadata info to the db...");
+                    let nft_name_clone = metadata_data.name.clone();
                     match self
                         .save_metadata_to_db(
                             metadata_data,
@@ -79,9 +80,9 @@ impl QueueWorker {
                             println!("Sucessfully saved metadata to db");
                             let nft_doc = NftDoc {
                                 mint_address : mint_data.mint_address,
-                                nft_name : metadata_data.name
+                                nft_name : nft_name_clone
                             };
-                            self.elasticsearch_client.create_nft_index(nft_doc).await;
+                            self.elasticsearch_client.create_nft_index(nft_doc).await.expect("failed to create a index for the nft details");
                         }
                         Err(e) => {
                             println!("Error saving metadata to db {}", e)
