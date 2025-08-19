@@ -69,7 +69,7 @@ export class MagicEdenAPIService {
     timeframeData: Record<string, TrendingCollection[]>;
   }> {
     try {
-      const timeframes: ('1h' | '1d' | '7d' | '30d')[] = ['1h', '1d', '7d', '30d'];
+      const timeframes: ('1h' | '1d' | '7d')[] = ['1h', '1d', '7d'];
       const promises = timeframes.map(timeframe => 
         this.getPopularCollections(timeframe)
       );
@@ -85,7 +85,7 @@ export class MagicEdenAPIService {
       const allCollections = new Map<string, TrendingCollection>();
       const seenSymbols = new Set<string>();
       
-      // Priority order: 1h -> 1d -> 7d -> 30d
+      // Priority order: 1h -> 1d -> 7d
       timeframes.forEach(timeframe => {
         timeframeData[timeframe].forEach(collection => {
           if (!seenSymbols.has(collection.symbol)) {
