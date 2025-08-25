@@ -3,35 +3,66 @@ pub mod redis;
 pub mod types;
 pub mod ys_grpc;
 pub mod elasticsearch;
+
 use crate::elasticsearch::client::ElasticSearchClient;
 use crate::entities::mint;
 use crate::redis::queue_manager::RedisQueue;
 use crate::redis::worker::QueueWorker;
 use crate::{
     entities::nft_metadata,
-    types::mint::{MintResponse, PartialMetadata},
+    types::{mint::{MintResponse, PartialMetadata}, elasticsearch::SearchResponse},
     ys_grpc::grpc_client::GRPCclient,
 };
 use axum::{
     extract::{Path, State},
+    http::StatusCode,
+    response::Json,
     routing::get,
-    Json, Router,
+    Router,
 };
 use dotenvy::dotenv;
 use sea_orm::{prelude::Uuid, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
+use serde::{Deserialize, Serialize};
 use std::env;
+use reqwest::{blocking::Client, header::CONTENT_TYPE};
 
 const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+
+#[derive(Serialize, Deserialize)]
+struct RequestBody {
+    jsonrpc: String,
+    id: u64,
+    method: String,
+    params: serde_json::Value,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
+
+    let url = "https://api.mainnet-beta.solana.com";
+    let client = Client::new();
+
+    let request_body = RequestBody {
+        jsonrpc: "2.0".to_string(),
+        id: 1,
+        method: "getAssets".to_string(),
+        params: serde_json::json!({}),
+    };
+
+    let request = client.post(url)
+        .header(CONTENT_TYPE, "application/json");
+
+    let response = request.json(&request_body).send()?;
+
+    println!("Response: {:?}", response.text()?);
+
     
     let elasticsearch = ElasticSearchClient::new(env::var("ELASTICSEARCH_URL").expect("failed to get es_url from env"), env::var("ELASTICSEARCH_INDEX_NAME").expect("failed to get index name from env")).await.expect("Error creating a elasticsearch client");
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let db: DatabaseConnection = Database::connect(database_url).await?;
     let queue = RedisQueue::new().await?;
-    let worker = QueueWorker::new(queue, db.clone(), elasticsearch); // here we initialized worker and queue
+    let worker = QueueWorker::new(queue, db.clone(), elasticsearch.clone()); // here we initialized worker and queue
     
     let grpc_client = GRPCclient::new(
         env::var("RPC_ENDPOINT").expect("failed to retrieve the rpc from env"),
@@ -42,8 +73,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     worker.start_processing().await; // message ready to be extracted from queue and be processed.
 
     let app = Router::new()
-        .route("/details/:mint_id", get(get_details))
-        .with_state(db);
+        .route("/details/{mint_id}", get(get_details))
+        .route("/search/nfts/{query}", get(search_nfts))
+        .with_state((db, elasticsearch));
         
     let listener = tokio::net::TcpListener::bind("localhost:3001")
         .await
@@ -55,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub async fn get_details(
-    State(db): State<DatabaseConnection>,
+    State((db, _)): State<(DatabaseConnection, ElasticSearchClient)>,
     Path(mint_id): Path<Uuid>,
 ) -> Json<MintResponse> {
 
@@ -176,6 +208,19 @@ pub async fn get_details(
                     primary_sale_happened: false,
                 },
             })
+        }
+    }
+}
+
+pub async fn search_nfts(
+    State((_, elasticsearch)): State<(DatabaseConnection, ElasticSearchClient)>,
+    query_path: Path<String>,
+) -> Result<Json<SearchResponse>, StatusCode> {
+    match elasticsearch.search_nft(query_path, 20).await {
+        Ok(search_response) => Ok(Json(search_response)),
+        Err(e) => {
+            println!("Search error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
 }
