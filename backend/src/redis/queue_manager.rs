@@ -150,9 +150,9 @@ impl RedisQueue {
 
                             return Ok(Some(Metadata {
                                 mint_address: metadeta.mint.to_string(),
-                                metadata_address: metadata_address.to_string(),
+                                metadata_address: Some(metadata_address.to_string()),
                                 name: metadeta.name,
-                                symbol: metadeta.symbol,
+                                symbol: Some(metadeta.symbol),
                                 uri: metadeta.uri,
                                 seller_fee_basis_points: metadeta.seller_fee_basis_points,
                                 token_standard: metadeta.token_standard,
@@ -167,9 +167,9 @@ impl RedisQueue {
 
                             return Ok(Some(Metadata {
                                 mint_address: metadeta.mint.to_string(),
-                                metadata_address: metadata_address.to_string(),
+                                metadata_address: Some(metadata_address.to_string()),
                                 name: metadeta.name,
-                                symbol: metadeta.symbol,
+                                symbol: Some(metadeta.symbol),
                                 uri: metadeta.uri,
                                 seller_fee_basis_points: metadeta.seller_fee_basis_points,
                                 token_standard: metadeta.token_standard,
@@ -184,9 +184,9 @@ impl RedisQueue {
 
                 Ok(Some(Metadata {
                     mint_address: metadeta.mint.to_string(),
-                    metadata_address: metadata_address.to_string(),
+                    metadata_address: Some(metadata_address.to_string()),
                     name: metadeta.name,
-                    symbol: metadeta.symbol,
+                    symbol: Some(metadeta.symbol),
                     uri: metadeta.uri,
                     seller_fee_basis_points: metadeta.seller_fee_basis_points,
                     token_standard: metadeta.token_standard,
