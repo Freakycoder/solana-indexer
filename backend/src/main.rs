@@ -1,11 +1,13 @@
 pub mod elasticsearch;
 pub mod entities;
+pub mod helius;
 pub mod redis;
 pub mod types;
 pub mod ys_grpc;
 
 use crate::elasticsearch::client::ElasticSearchClient;
 use crate::entities::mint;
+use crate::helius::client::HeliusClient;
 use crate::redis::queue_manager::RedisQueue;
 use crate::redis::worker::QueueWorker;
 use crate::{
@@ -24,42 +26,14 @@ use axum::{
     Router,
 };
 use dotenvy::dotenv;
-use reqwest::{blocking::Client, header::CONTENT_TYPE};
 use sea_orm::{prelude::Uuid, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
-use serde::{Deserialize, Serialize};
 use std::env;
 
 const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
-const METAPLEX_PROGRAM: &str = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
-
-#[derive(Serialize, Deserialize)]
-struct RequestBody {
-    jsonrpc: String,
-    id: u64,
-    method: String,
-    params: serde_json::Value,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-
-    let url = "https://api.mainnet-beta.solana.com";
-    let client = Client::new();
-
-    let request_body = RequestBody {
-        jsonrpc: "2.0".to_string(),
-        id: 1,
-        method: "getAssets".to_string(),
-        params: serde_json::json!({"options":{"showCollectionMetadata":true,"showUnverifiedCollections":true},"ids":[METAPLEX_PROGRAM]}),
-    };
-
-    let request = client.post(url).header(CONTENT_TYPE, "application/json");
-
-    let response = request.json(&request_body).send()?;
-    println!("Request sent to metaplex server");
-
-    println!("Response: {:?}", response.text()?);
 
     let elasticsearch = ElasticSearchClient::new(
         env::var("ELASTICSEARCH_URL").expect("failed to get es_url from env"),
@@ -67,8 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await
     .expect("Error creating a elasticsearch client");
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let db: DatabaseConnection = Database::connect(database_url).await?;
+    let db = Database::connect(env::var("DATABASE_URL").expect("DATABASE_URL must be set")).await?;
+    let helius_client = HeliusClient::connect(
+        env::var("HELIUS_URL").expect("failed to get helius url from env"),
+        db.clone(),
+    );
+    let _ = helius_client.get_assets().await;
     let queue = RedisQueue::new().await?;
     let worker = QueueWorker::new(queue, db.clone(), elasticsearch.clone()); // here we initialized worker and queue
 
@@ -189,7 +167,7 @@ pub async fn get_details(
                 freeze_authority: mint_details.freeze_authority,
                 metadata: PartialMetadata {
                     name: Some(metadata.name),
-                    symbol: Some(metadata.symbol),
+                    symbol: metadata.symbol,
                     uri: Some(metadata.uri),
                     seller_fee_basis_points: metadata.seller_fee_basis_points,
                     update_authority: Some(metadata.update_authority),
