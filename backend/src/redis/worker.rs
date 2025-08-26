@@ -121,7 +121,7 @@ impl QueueWorker {
         mint_address: String,
     ) -> Result<NftModel, DbErr> {
         let metadata_model = NftActiveModel {
-            metadata_address: Set(metadata_pda_address.to_string()),
+            metadata_address: Set(Some(metadata_pda_address.to_string())),
             mint_address: Set(mint_address),
             name: Set(metadata_data.name),
             symbol: Set(metadata_data.symbol),
