@@ -3,7 +3,7 @@ use mpl_token_metadata::types::{TokenStandard};
 #[derive(Debug, Clone)]
 pub struct Metadata{
     pub mint_address : String,
-    pub metadata_address : String,
+    pub metadata_address : Option<String>,
     pub name : String,
     pub symbol : String,
     pub uri : String,
