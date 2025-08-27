@@ -8,11 +8,11 @@ pub struct Model{
     #[sea_orm(unique)]
     pub mint_address : String,
     #[sea_orm(unique)]
-    pub metadata_address : String,
+    pub metadata_address : Option<String>,
     #[sea_orm(column_type = "Text")]
     pub name : String,
     #[sea_orm(column_type = "Text")]
-    pub symbol : String,
+    pub symbol : Option<String>,
     #[sea_orm(column_type = "Text")]
     pub uri : String,
     pub seller_fee_basis_points : u16,
