@@ -1,4 +1,5 @@
 use core::fmt;
+use axum::extract::Path;
 use elasticsearch::{http::transport::Transport, Elasticsearch, IndexParts, SearchParts};
 use serde_json::{json, Value};
 use std::error::Error;
@@ -143,7 +144,7 @@ impl ElasticSearchClient {
 
     pub async fn search_nft(
         &self,
-        query: &str,
+        Path(query) : Path<String>,
         size: i64,
     ) -> Result<SearchResponse, ElasticSearchError> {
         let search_query = json!({
