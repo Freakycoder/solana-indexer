@@ -112,7 +112,7 @@ impl HeliusClient {
             name: Set(metadata.name),
             symbol: Set(metadata.symbol),
             uri: Set(metadata.uri),
-            seller_fee_basis_points: Set(metadata.seller_fee_basis_points),
+            seller_fee_basis_points: Set(metadata.seller_fee_basis_points as i32),
             update_authority: Set(metadata.update_authority),
             primary_sale_happened: Set(metadata.primary_sale_happened),
             is_mutable: Set(metadata.is_mutable),
