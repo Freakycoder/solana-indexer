@@ -55,19 +55,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("RPC_TOKEN").expect("failed to fetch token from env"),
     ); // the client is also initialized
 
-    grpc_client.listen_for_updates().await?; // the client is up & ready and waiting for messages to push to queue
-    worker.start_processing().await; // message ready to be extracted from queue and be processed.
-
     let app = Router::new()
         .route("/details/{mint_id}", get(get_details))
         .route("/search/nfts/{query}", get(search_nfts))
         .with_state((db, elasticsearch));
+    grpc_client.listen_for_updates().await?; // the client is up & ready and waiting for messages to push to queue
 
     let listener = tokio::net::TcpListener::bind("localhost:3001")
         .await
         .unwrap();
     println!("The server is running at localhost:3001");
     axum::serve(listener, app).await?;
+    // worker is bought down to last row becoz it starts an infinite loop
+    worker.start_processing().await; // message ready to be extracted from queue and be processed.
 
     Ok(())
 }
@@ -202,9 +202,9 @@ pub async fn get_details(
 
 pub async fn search_nfts(
     State((_, elasticsearch)): State<(DatabaseConnection, ElasticSearchClient)>,
-    query_path: Path<String>,
+    query: Path<String>,
 ) -> Result<Json<SearchResponse>, StatusCode> {
-    match elasticsearch.search_nft(query_path, 20).await {
+    match elasticsearch.search_nft(&query, 20).await {
         Ok(search_response) => Ok(Json(search_response)),
         Err(e) => {
             println!("Search error: {}", e);
