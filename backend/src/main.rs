@@ -32,7 +32,7 @@ use std::env;
 const SPL_TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
 
     let elasticsearch = ElasticSearchClient::new(
@@ -55,19 +55,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("RPC_TOKEN").expect("failed to fetch token from env"),
     ); // the client is also initialized
 
-    let app = Router::new()
-        .route("/details/{mint_id}", get(get_details))
-        .route("/search/nfts/{query}", get(search_nfts))
-        .with_state((db, elasticsearch));
-    grpc_client.listen_for_updates().await?; // the client is up & ready and waiting for messages to push to queue
+    let grpc_handler  = tokio::spawn(async move {
+        println!("Starting GRPC server...");
+        if let Err(e) = grpc_client.listen_for_updates().await{ // the client is up & ready and waiting for messages to push to queue
+            eprintln!("GRPC listener Error : {}", e);
+        };
+    });
 
-    let listener = tokio::net::TcpListener::bind("localhost:3001")
-        .await
-        .unwrap();
-    println!("The server is running at localhost:3001");
-    axum::serve(listener, app).await?;
-    // worker is bought down to last row becoz it starts an infinite loop
-    worker.start_processing().await; // message ready to be extracted from queue and be processed.
+    let worker_handler = tokio::spawn(async move {
+        println!("Starting queue worker...");
+        worker.start_processing().await; // message ready to be extracted from queue and be processed.
+    });
+
+    let server_handler = tokio::spawn(async move{
+        let app = Router::new()
+            .route("/details/{mint_id}", get(get_details))
+            .route("/search/nfts/{query}", get(search_nfts))
+            .with_state((db, elasticsearch));
+    
+        let listener = tokio::net::TcpListener::bind("localhost:3001")
+            .await
+            .unwrap();
+        println!("The Server is running at port 3001");
+        if let Err(e) = axum::serve(listener, app).await{
+           eprintln!("Server error : {}", e); 
+        };
+    });
+
+    tokio::select! {
+        result = grpc_handler => {
+            eprintln!("📡 GRPC task ended: {:?}", result);
+        }
+        result = worker_handler => {
+            eprintln!("⚙️  Worker task ended: {:?}", result);
+        }
+        result = server_handler => {
+            eprintln!("🌐 Server task ended: {:?}", result);
+        }
+    }
 
     Ok(())
 }
