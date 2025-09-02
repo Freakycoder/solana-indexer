@@ -25,7 +25,7 @@ impl GRPCclient {
         &self,
     ) -> Result<
         GeyserGrpcClient<impl yellowstone_grpc_client::Interceptor>,
-        Box<dyn std::error::Error>,
+        Box<dyn std::error::Error + Send + Sync>,
     > {
         println!("Connecting to PublicNode...");
 
@@ -81,7 +81,7 @@ impl GRPCclient {
 
 pub async fn listen_for_updates(
     &self
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     
     let mut client = self.client_connection().await?;
     let subscription = self.create_subscription();
@@ -104,10 +104,7 @@ pub async fn listen_for_updates(
                     match update_type {
                         yellowstone_grpc_proto::geyser::subscribe_update::UpdateOneof::Account(account) => {
                             if let Some(acc) = &account.account {
-                                println!("Account Update:");
-                                println!("  Account Address: {}", bs58::encode(&acc.pubkey).into_string());
-                                println!("  Owner: {}", bs58::encode(&acc.owner).into_string());
-                                println!("  Data length: {} bytes", acc.data.len());
+            
                                 
                                 if acc.data.len() == 82 {
                                     let _ = queue.enqueue_message(&acc.data, &acc.owner, "mint_data_message", &acc.pubkey).await.map_err(|e| {
