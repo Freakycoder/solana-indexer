@@ -44,3 +44,7 @@ next-env.d.ts
 /backend/target
 /backend/Cargo.lock
 /backend/migration/target
+/backend/api_server/target
+/backend/grpc_listener/target
+/backend/queue_worker/target
+/backend/shared/target

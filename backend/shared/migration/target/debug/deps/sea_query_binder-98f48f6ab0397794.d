@@ -1,0 +1,10 @@
+/Users/ahmed/Projects/solana-indexer/backend/migration/target/debug/deps/libsea_query_binder-98f48f6ab0397794.rmeta: /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/lib.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx_postgres.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/values.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx.rs
+
+/Users/ahmed/Projects/solana-indexer/backend/migration/target/debug/deps/libsea_query_binder-98f48f6ab0397794.rlib: /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/lib.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx_postgres.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/values.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx.rs
+
+/Users/ahmed/Projects/solana-indexer/backend/migration/target/debug/deps/sea_query_binder-98f48f6ab0397794.d: /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/lib.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx_postgres.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/values.rs /Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx.rs
+
+/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/lib.rs:
+/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx_postgres.rs:
+/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/values.rs:
+/Users/ahmed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sea-query-binder-0.7.0/src/sqlx.rs:
