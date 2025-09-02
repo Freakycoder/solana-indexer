@@ -425,25 +425,10 @@ name = "backend"
 version = "0.1.0"
 dependencies = [
  "axum 0.8.4",
- "borsh 1.5.7",
- "bs58",
  "dotenvy",
- "elasticsearch",
- "futures",
- "mpl-token-metadata",
- "redis",
- "reqwest",
  "sea-orm",
- "serde",
- "serde_json",
- "solana-client",
- "solana-program",
- "solana-transaction-status",
+ "shared",
  "tokio",
- "tokio-stream",
- "tonic 0.13.1",
- "yellowstone-grpc-client",
- "yellowstone-grpc-proto",
 ]
 
 [[package]]
@@ -4087,6 +4072,32 @@ checksum = "75872d278a8f37ef87fa0ddbda7802605cb18344497949862c0d4dcb291eba60"
 dependencies = [
  "digest 0.10.7",
  "keccak",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.4",
+ "borsh 1.5.7",
+ "bs58",
+ "dotenvy",
+ "elasticsearch",
+ "futures",
+ "mpl-token-metadata",
+ "redis",
+ "reqwest",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "solana-client",
+ "solana-program",
+ "solana-transaction-status",
+ "tokio",
+ "tokio-stream",
+ "tonic 0.13.1",
+ "yellowstone-grpc-client",
+ "yellowstone-grpc-proto",
 ]
 
 [[package]]
