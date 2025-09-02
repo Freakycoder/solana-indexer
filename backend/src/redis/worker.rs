@@ -27,8 +27,8 @@ impl QueueWorker {
         }
     }
     pub async fn start_processing(&self) {
+        println!("Started to process to the queue messages...");
         loop {
-            println!("Started to process to the queue messages...");
             match self.queue.dequeue_message("mint_data_message").await {
                 Ok(Some(data)) => {
                     println!("Recived mint data from the queue");
