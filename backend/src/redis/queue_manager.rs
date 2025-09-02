@@ -4,18 +4,19 @@ use redis::{AsyncCommands, Client, RedisResult};
 use solana_client::rpc_client::RpcClient;
 use solana_program::pubkey::Pubkey;
 use std::str::FromStr;
+
 pub struct RedisQueue {
     redis_client: Client,
     rpc_client: RpcClient,
 }
 
 impl RedisQueue {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         println!("Initializing redis queue...");
 
         let redis_url = "redis://localhost:6379";
 
-        let redis_client = Client::open(redis_url)?;
+        let redis_client = Client::open(redis_url).map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { Box::new(e) })?;
 
         Ok(Self {
             redis_client,
@@ -52,10 +53,14 @@ impl RedisQueue {
             supply,
         };
 
+        println!("Parsed mint data : {:?}", mint_data);
+
         let message_json = match serde_json::to_string(&mint_data) {
             Ok(mesage_string) => mesage_string,
             Err(_) => format!("Error serialing the message into string"),
         };
+
+        println!("Serialized mint data succesfully");
 
         let queue_length: usize = conn.lpush(queue_name, message_json).await?;
         println!("Message pushed to the queue succesfully");
@@ -81,10 +86,10 @@ impl RedisQueue {
     pub fn get_metadata_pda_address(
         &self,
         mint_address: &str,
-    ) -> Result<Pubkey, Box<dyn std::error::Error>> {
-        let mint_pubkey = Pubkey::from_str(mint_address).map_err(|e| {
+    ) -> Result<Pubkey, Box<dyn std::error::Error + Send + Sync>> {
+        let mint_pubkey = Pubkey::from_str(mint_address).map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
             println!("Inavlid pubkey parsing");
-            format!("Invalid pubkey: {}", e)
+            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("Invalid pubkey: {}", e)))
         })?;
 
         let meta_seeds = &[
@@ -99,7 +104,7 @@ impl RedisQueue {
     fn get_metadeta_pda_data(
         &self,
         mint_address: String,
-    ) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error + Send + Sync>> {
         let metadata_pda = self.get_metadata_pda_address(&mint_address)?;
 
         match self.rpc_client.get_account(&metadata_pda) {
@@ -125,7 +130,7 @@ impl RedisQueue {
         &self,
         mint_address: String,
         metadata_address: Pubkey,
-    ) -> Result<Option<Metadata>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<Metadata>, Box<dyn std::error::Error + Send + Sync>> {
         let metadata_account_data = match self.get_metadeta_pda_data(mint_address){
             Ok(Some(data_byte)) => data_byte, // the return type is result of option, so we check for both some and none
             Ok(None) => return Ok(None),
