@@ -14,8 +14,8 @@ pub struct Model {
     pub frozen: bool,
     pub delegated: bool,
     pub ownership_model: String, // "single", "fractional", etc.
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: DateTimeWithTimeZone,
+    pub created_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

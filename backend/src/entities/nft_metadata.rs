@@ -7,7 +7,6 @@ pub struct Model{
     pub id : Uuid,
     #[sea_orm(unique)]
     pub mint_address : String,
-    #[sea_orm(unique)]
     pub metadata_address : Option<String>,
     #[sea_orm(column_type = "Text")]
     pub name : String,
@@ -15,35 +14,35 @@ pub struct Model{
     pub symbol : Option<String>,
     #[sea_orm(column_type = "Text")]
     pub uri : String,
-    pub seller_fee_basis_points : u16,
+    pub seller_fee_basis_points : i32,
     pub update_authority : String,
     pub primary_sale_happened : bool,
     pub is_mutable : bool, // tells wheather the metadata can be changed or updated
-    pub created_at : DateTime
+    pub created_at : DateTimeWithTimeZone
 }
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm (
-        belongs_to = "super::mint::Entity",
-        from = "Column::MintAddress", 
-        to = "super::mint::Column::MintAddress"
-    )]
-    Mint,
+    // #[sea_orm (
+    //     belongs_to = "super::mint::Entity",
+    //     from = "Column::MintAddress", 
+    //     to = "super::mint::Column::MintAddress"
+    // )]
+    // Mint,
     
-    #[sea_orm(has_many = "super::nft_creator::Entity")]
-    NftCreators,
+    // #[sea_orm(has_many = "super::nft_creator::Entity")]
+    // NftCreators,
 }
 
-impl Related<super::mint::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Mint.def()
-    }
-}
+// impl Related<super::mint::Entity> for Entity {
+//     fn to() -> RelationDef {
+//         Relation::Mint.def()
+//     }
+// }
 
-impl Related<super::nft_creator::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::NftCreators.def()
-    }
-}
+// impl Related<super::nft_creator::Entity> for Entity {
+//     fn to() -> RelationDef {
+//         Relation::NftCreators.def()
+//     }
+// }
 
 impl ActiveModelBehavior for ActiveModel {}

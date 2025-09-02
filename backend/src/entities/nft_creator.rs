@@ -10,23 +10,23 @@ pub struct Model{
     pub verified: bool,
     pub share: i16, // Percentage share (0-100)
     
-    pub created_at: DateTime,
+    pub created_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::nft_metadata::Entity",
-        from = "Column::MetadataAddress",
-        to = "super::nft_metadata::Column::MetadataAddress"
-    )]
-    NftMetadata,
+    // #[sea_orm(
+    //     belongs_to = "super::nft_metadata::Entity",
+    //     from = "Column::MetadataAddress",
+    //     to = "super::nft_metadata::Column::MetadataAddress"
+    // )]
+    // NftMetadata,
 }
 
-impl Related<super::nft_metadata::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::NftMetadata.def()
-    }
-}
+// impl Related<super::nft_metadata::Entity> for Entity {
+//     fn to() -> RelationDef {
+//         Relation::NftMetadata.def()
+//     }
+// }
 
 impl ActiveModelBehavior for ActiveModel {}

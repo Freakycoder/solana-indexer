@@ -32,7 +32,7 @@ pub struct Model {
     
     #[sea_orm(column_type = "Text", nullable)]
     pub collection_family: Option<String>,
-    pub updated_at: DateTime,
+    pub created_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

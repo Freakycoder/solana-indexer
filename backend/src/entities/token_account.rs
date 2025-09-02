@@ -24,7 +24,7 @@ pub struct Model {
     
     pub is_native: bool,
     pub rent_exempt_reserve: String,
-    pub created_at: DateTime,
+    pub created_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

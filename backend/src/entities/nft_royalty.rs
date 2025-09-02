@@ -16,8 +16,8 @@ pub struct Model {
     pub basis_points: u16, // Basis points (0 to 10000)
     pub primary_sale_happened: bool,
     pub locked: bool,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: DateTimeWithTimeZone,
+    pub created_at: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
