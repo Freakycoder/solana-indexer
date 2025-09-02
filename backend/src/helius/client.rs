@@ -29,7 +29,7 @@ impl HeliusClient {
             jsonrpc: "2.0".to_string(),
             id: 1,
             method: "searchAssets".to_string(),
-            params: serde_json::json!({"conditionType":"all","page":1,"limit":2,"options":{"showCollectionMetadata":true,"showUnverifiedCollections":true}}),
+            params: serde_json::json!({"conditionType":"all","page":1,"limit":100,"options":{"showCollectionMetadata":true,"showUnverifiedCollections":true}}),
         };
 
         let response = client
