@@ -10,6 +10,7 @@ use shared::{
     Json, Path, Router, State, StatusCode, Uuid,
     get, SPL_TOKEN_PROGRAM,
 };
+use tower_http::cors::{CorsLayer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,7 +28,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .route("/details/{mint_id}", get(get_details))
         .route("/search/nfts/{query}", get(search_nfts))
-        .with_state((db, elasticsearch));
+        .with_state((db, elasticsearch))
+        .layer(CorsLayer::very_permissive());
 
     let listener = tokio::net::TcpListener::bind("localhost:3001")
         .await

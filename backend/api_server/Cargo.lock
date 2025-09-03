@@ -178,6 +178,7 @@ dependencies = [
  "sea-orm",
  "shared",
  "tokio",
+ "tower-http",
 ]
 
 [[package]]
