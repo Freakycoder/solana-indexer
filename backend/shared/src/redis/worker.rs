@@ -102,7 +102,7 @@ impl QueueWorker {
             Ok(Some(metadata_data)) => {
                 println!("Successfully parsed metadata bytes");
                 println!("Saving the metadata info to the db...");
-                let nft_name_clone = metadata_data.name.clone();
+                let nft_name_clone = metadata_data.name.clone().replace('\0', "").trim().to_string();
                 
                 match self
                     .save_metadata_to_db(
