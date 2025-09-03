@@ -48,7 +48,7 @@ impl MigrationTrait for Migration {
                     .col(text(NftMetadata::Name))
                     .col(text(NftMetadata::Symbol))
                     .col(text(NftMetadata::Uri))
-                    .col(integer(NftMetadata::SellerFeeBasisPoints))
+                    .col(small_integer(NftMetadata::SellerFeeBasisPoints))
                     .col(string(NftMetadata::UpdateAuthority))
                     .col(boolean(NftMetadata::PrimarySaleHappened))
                     .col(boolean(NftMetadata::IsMutable))
@@ -106,7 +106,7 @@ impl MigrationTrait for Migration {
                     .col(string_null(NftCreator::MetadataAddress)) // Made nullable since parent can be null
                     .col(string(NftCreator::CreatorAddress))
                     .col(boolean(NftCreator::Verified))
-                    .col(integer(NftCreator::Share))
+                    .col(small_integer(NftCreator::Share))
                     .col(
                         timestamp_with_time_zone(NftCreator::CreatedAt)
                             .default(Expr::current_timestamp()),
@@ -160,7 +160,7 @@ impl MigrationTrait for Migration {
                     .col(text(NftRoyalty::RoyaltyModel))
                     .col(text_null(NftRoyalty::Target))
                     .col(double(NftRoyalty::Percent))
-                    .col(integer(NftRoyalty::BasisPoints))
+                    .col(small_unsigned(NftRoyalty::BasisPoints))
                     .col(boolean(NftRoyalty::PrimarySaleHappened))
                     .col(boolean(NftRoyalty::Locked))
                     .col(timestamp_with_time_zone(NftRoyalty::UpdatedAt))
