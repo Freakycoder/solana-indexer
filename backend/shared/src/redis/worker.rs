@@ -13,17 +13,16 @@ use solana_program::pubkey::Pubkey;
 pub struct QueueWorker {
     queue: RedisQueue,
     db: DatabaseConnection,
-    elasticsearch_client : ElasticSearchClient
+    elasticsearch_client: ElasticSearchClient,
 }
 
 impl QueueWorker {
-
-    pub fn new(queue : RedisQueue, db : DatabaseConnection, client : ElasticSearchClient) -> Self{
+    pub fn new(queue: RedisQueue, db: DatabaseConnection, client: ElasticSearchClient) -> Self {
         println!("initializing queue, db connection and es_client for worker to work on...");
         Self {
             queue,
             db,
-            elasticsearch_client: client
+            elasticsearch_client: client,
         }
     }
     pub async fn start_processing(&self) {
@@ -32,20 +31,21 @@ impl QueueWorker {
             match self.queue.dequeue_message("mint_data_message").await {
                 Ok(Some(data)) => {
                     println!("Recived mint data from the queue");
-                    println!("queue message : {:?}",data);
-                    self.process_mint_data(data).await},
-                    Ok(None) => {
-                        println!("Queue empty, no mint data recieved. sleeping for some time...");
-                        sleep(Duration::from_millis(100));
-                    }
-                    Err(e) => {
-                        println!("Error getting the message from the queue {}", e);
-                        sleep(Duration::from_secs(2));
-                    }
+                    println!("queue message : {:?}", data);
+                    self.process_mint_data(data).await
+                }
+                Ok(None) => {
+                    println!("Queue empty, no mint data recieved. sleeping for some time...");
+                    sleep(Duration::from_millis(100));
+                }
+                Err(e) => {
+                    println!("Error getting the message from the queue {}", e);
+                    sleep(Duration::from_secs(2));
                 }
             }
         }
-        
+    }
+
     async fn process_mint_data(&self, mint_data: MintData) {
         println!("Processing the mint data...");
         println!("Saving the mint data to db...");
@@ -65,7 +65,7 @@ impl QueueWorker {
             {
                 Ok(Some(metadata_data)) => {
                     println!("Successfully parsed metadata bytes");
-                    println!("PDA metadata : {:?}",metadata_data);
+                    println!("PDA metadata : {:?}", metadata_data);
                     println!("Saving the metadata info to the db...");
                     let nft_name_clone = metadata_data.name.clone();
                     match self
@@ -79,10 +79,13 @@ impl QueueWorker {
                         Ok(_) => {
                             println!("Sucessfully saved metadata to db");
                             let nft_doc = NftDoc {
-                                mint_address : mint_data.mint_address,
-                                nft_name : nft_name_clone
+                                mint_address: mint_data.mint_address,
+                                nft_name: nft_name_clone,
                             };
-                            self.elasticsearch_client.create_nft_index(nft_doc).await.expect("failed to create a index for the nft details");
+                            self.elasticsearch_client
+                                .create_nft_index(nft_doc)
+                                .await
+                                .expect("failed to create a index for the nft details");
                         }
                         Err(e) => {
                             println!("Error saving metadata to db {}", e)
@@ -126,7 +129,7 @@ impl QueueWorker {
             name: Set(metadata_data.name),
             symbol: Set(metadata_data.symbol),
             uri: Set(metadata_data.uri),
-            seller_fee_basis_points: Set(metadata_data.seller_fee_basis_points as i32),
+            seller_fee_basis_points: Set(metadata_data.seller_fee_basis_points as i16),
             update_authority: Set(metadata_data.update_authority),
             primary_sale_happened: Set(metadata_data.primary_sale_happened),
             is_mutable: Set(metadata_data.is_mutable),

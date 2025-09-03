@@ -14,7 +14,7 @@ pub struct Model{
     pub symbol : Option<String>,
     #[sea_orm(column_type = "Text")]
     pub uri : String,
-    pub seller_fee_basis_points : i32,
+    pub seller_fee_basis_points : i16,
     pub update_authority : String,
     pub primary_sale_happened : bool,
     pub is_mutable : bool, // tells wheather the metadata can be changed or updated

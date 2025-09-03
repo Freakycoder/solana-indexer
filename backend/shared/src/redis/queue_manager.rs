@@ -23,7 +23,9 @@ impl RedisQueue {
 
         Ok(Self {
             redis_client,
-            rpc_client: RpcClient::new("https://api.mainnet-beta.solana.com"),
+            rpc_client: RpcClient::new(
+                std::env::var("HELIUS_URL").expect("helius url not found from env"),
+            ),
         })
     }
 
@@ -90,10 +92,14 @@ impl RedisQueue {
         &self,
         mint_address: &str,
     ) -> Result<Pubkey, Box<dyn std::error::Error>> {
-        let mint_pubkey = Pubkey::from_str(mint_address).map_err(|e| -> Box<dyn std::error::Error> {
-            println!("Inavlid pubkey parsing");
-            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("Invalid pubkey: {}", e)))
-        })?;
+        let mint_pubkey =
+            Pubkey::from_str(mint_address).map_err(|e| -> Box<dyn std::error::Error> {
+                println!("Inavlid pubkey parsing");
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Invalid pubkey: {}", e),
+                ))
+            })?;
 
         let meta_seeds = &[
             b"metadata",
@@ -122,8 +128,10 @@ impl RedisQueue {
                     Ok(None)
                 }
             }
-            Err(_) => {
-                println!("No metadata account found");
+            Err(rpc_error) => {
+                println!("❌ RPC Error fetching metadata account: {:?}", rpc_error);
+                println!("🔍 Metadata PDA: {}", metadata_pda);
+                println!("🪙 Mint address: {}", mint_address);
                 Ok(None)
             }
         }
@@ -134,7 +142,7 @@ impl RedisQueue {
         mint_address: String,
         metadata_address: Pubkey,
     ) -> Result<Option<Metadata>, Box<dyn std::error::Error>> {
-        let metadata_account_data = match self.get_metadeta_pda_data(mint_address){
+        let metadata_account_data = match self.get_metadeta_pda_data(mint_address) {
             Ok(Some(data_byte)) => data_byte, // the return type is result of option, so we check for both some and none
             Ok(None) => return Ok(None),
             Err(e) => return Err(e),
@@ -145,12 +153,12 @@ impl RedisQueue {
             Ok(metadeta) => {
                 if let Some(collection_data) = metadeta.collection {
                     let collection_nft_mint = collection_data.key.to_string();
-                    let collection_nft_data =
-                        match self.get_metadeta_pda_data(collection_nft_mint){
-                            Ok(Some(data_byte)) => data_byte,
-                            Ok(None) => return Ok(None),
-                            Err(e) => return Err(e),
-                        };
+                    let collection_nft_data = match self.get_metadeta_pda_data(collection_nft_mint)
+                    {
+                        Ok(Some(data_byte)) => data_byte,
+                        Ok(None) => return Ok(None),
+                        Err(e) => return Err(e),
+                    };
 
                     match MetadataAccount::safe_deserialize(&collection_nft_data) {
                         Ok(full_metadata) => {
@@ -162,7 +170,7 @@ impl RedisQueue {
                                 name: metadeta.name,
                                 symbol: Some(metadeta.symbol),
                                 uri: metadeta.uri,
-                                seller_fee_basis_points: metadeta.seller_fee_basis_points as i32,
+                                seller_fee_basis_points: metadeta.seller_fee_basis_points as i16,
                                 token_standard: metadeta.token_standard,
                                 collection: Some(full_metadata.name),
                                 update_authority: metadeta.update_authority.to_string(),
@@ -179,7 +187,7 @@ impl RedisQueue {
                                 name: metadeta.name,
                                 symbol: Some(metadeta.symbol),
                                 uri: metadeta.uri,
-                                seller_fee_basis_points: metadeta.seller_fee_basis_points as i32,
+                                seller_fee_basis_points: metadeta.seller_fee_basis_points as i16,
                                 token_standard: metadeta.token_standard,
                                 collection: None,
                                 update_authority: metadeta.update_authority.to_string(),
@@ -196,14 +204,14 @@ impl RedisQueue {
                     name: metadeta.name,
                     symbol: Some(metadeta.symbol),
                     uri: metadeta.uri,
-                    seller_fee_basis_points: metadeta.seller_fee_basis_points as i32,
+                    seller_fee_basis_points: metadeta.seller_fee_basis_points as i16,
                     token_standard: metadeta.token_standard,
                     collection: None,
                     update_authority: metadeta.update_authority.to_string(),
                     primary_sale_happened: metadeta.primary_sale_happened,
                     is_mutable: metadeta.is_mutable,
                 }))
-            },
+            }
             Err(_) => Ok(None),
         }
     }

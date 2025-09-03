@@ -29,7 +29,7 @@ pub struct PartialMetadata{
     pub name : Option<String>,
     pub symbol : Option<String>,
     pub uri : Option<String>,
-    pub seller_fee_basis_points : i32,
+    pub seller_fee_basis_points : i16,
     pub update_authority : Option<String>,
     pub primary_sale_happened : bool,
     pub is_mutable : bool,
