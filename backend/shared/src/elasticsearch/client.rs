@@ -146,19 +146,90 @@ impl ElasticSearchClient {
         query : &str,
         size: i64,
     ) -> Result<SearchResponse, ElasticSearchError> {
-        let search_query = json!({
-            "query": {
-                "multi_match": {
-                    "query": query,
-                    "fields": ["nft_name", "mint_address"],
-                    "fuzziness": "AUTO",
-                    "operator": "or"
-                }
-            },
-            "sort": [
-                {"_score": {"order": "desc"}}
-            ]
-        });
+
+        let trimmed_query = query.trim();
+        println!("Search Query received : {}", trimmed_query);
+         let search_query = if trimmed_query.len() > 43 {
+            println!("mint address detected as search term");
+            json!({
+                "size": size,
+                "query": {
+                    "term": {
+                        "mint_address": {
+                            "value": trimmed_query
+                        }
+                    }
+                },
+                "sort": [
+                    {"_score": {"order": "desc"}}
+                ]
+            })
+        } else {
+            println!("nft_name detected as search term");
+            json!({
+                "size": size,
+                "query": {
+                    "bool": {
+                        "should": [
+                            // exact phrase match
+                            {
+                                "match_phrase": { 
+                                    "nft_name": {
+                                        "query": trimmed_query,
+                                        "boost": 4.0 // the priority this matching strategy is given
+                                    }
+                                }
+                            },
+                            // EXACT CASE-INSENSITIVE MATCH 
+                            {
+                                "term": {
+                                    "nft_name.keyword": {
+                                        "value": trimmed_query,
+                                        "boost": 3.5,
+                                        "case_insensitive": true
+                                    }
+                                }
+                            },
+                            // FUZZY MATCHING - can handle typos in the word.
+                            {
+                                "match": {
+                                    "nft_name": {
+                                        "query": trimmed_query,
+                                        "fuzziness": "AUTO",
+                                        "operator": "or",
+                                        "boost": 2.5
+                                    }
+                                }
+                            },
+                            // SUBSTRING MATCHING (case-insensitive)
+                            {
+                                "wildcard": {
+                                    "nft_name": {
+                                        "value": format!("*{}*", trimmed_query.to_lowercase()),
+                                        "boost": 2.0,
+                                        "case_insensitive": true
+                                    }
+                                }
+                            },
+                            // PREFIX MATCHING - any name that starts with query (search term)
+                            {
+                                "prefix": {
+                                    "nft_name": {
+                                        "value": trimmed_query.to_lowercase(),
+                                        "boost": 1.5,
+                                        "case_insensitive": true
+                                    }
+                                }
+                            },
+                        ],
+                        "minimum_should_match": 1
+                    }
+                },
+                "sort": [
+                    {"_score": {"order": "desc"}}
+                ]
+            })
+        };
 
         let search_response = self
             .client
@@ -184,7 +255,7 @@ impl ElasticSearchClient {
             self.parse_response_data(search_json)
         } else {
             Err(ElasticSearchError::SearchError(format!(
-                "Unable to parse the search response for collection name"
+                "Unable to parse the search response for search term"
             )))
         }
     }
@@ -196,10 +267,11 @@ impl ElasticSearchClient {
         let hits = search_response["hits"]["hits"]
             .as_array() // we're using the same dot notation as JS, but only syntax different and we need to explicitly mention the type of value that field contains using (as_str(), as_f64, as_array...etc)
             .ok_or_else(|| {
+                println!("Unable to find hits field in the response");
                 ElasticSearchError::SearchError(format!(
                     "Unable to retrieve hits array from response"
                 ))
-            })?; // this is used for return type of Option<> and map_err is used for Result<>
+            })?; // this is used for return type of Option<T> and map_err is used for Result<T,E>
 
         let search_result_array: Vec<SearchResult> = hits
             .iter()
@@ -209,7 +281,7 @@ impl ElasticSearchClient {
                 let score = &hit["_score"];
                 Some(SearchResult {
                     mint_address: source["mint_address"].as_str()?.to_string(), // if mint_address exist then as_str converts it into string reference followed by string conversion(owned). if doesn't exist then as_str return None.
-                    nft_name: source["collection_name"].as_str()?.to_string(),
+                    nft_name: source["nft_name"].as_str()?.to_string(),
                     score: score.as_f64().unwrap_or(0.0),
                 })
             })
