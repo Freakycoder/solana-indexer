@@ -6,9 +6,15 @@ import useSearch from "@/hooks/useSearch";
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import TrendingCollections from '@/components/ui/TrendingCollections';
-import SearchFilters from '@/components/ui/SearchFilters';
-import NFTGrid from '@/components/ui/NFTGrid';
-import { ViewMode, SortOption } from '@/types';
+
+interface NFTSearchResult {
+  mint_address: string;
+  nft_name: string;
+  score: number;
+  image?: string;
+  price?: number;
+  collection?: string;
+}
 
 export default function Home() {
   // Search functionality using custom hook
@@ -16,23 +22,11 @@ export default function Home() {
     query,
     setQuery: setSearchQuery,
     results: searchResults,
-    isSearching,
-    error: searchError,
-    totalResults,
-    hasMore,
-    loadMore,
-    clearError
-  } = useSearch({
-    debounceMs: 400,
-    minQueryLength: 0,
-    pageSize: 20
-  });
+    isSearching
+  } = useSearch();
 
   // UI state
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   
   const { scrollY } = useScroll();
   const headerBackground = useTransform(
@@ -41,15 +35,33 @@ export default function Home() {
     ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.95)"]
   );
 
+  // Transform search results for the dropdown (first 8 results)
+  const dropdownResults: NFTSearchResult[] = searchResults.slice(0, 8);
+
   // Handle search input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    clearError();
   };
 
   // Clear search
   const handleClearSearch = () => {
     setSearchQuery('');
+  };
+
+  // Handle when user clicks on a search result in dropdown
+  const handleSearchResultClick = (result: NFTSearchResult) => {
+    console.log('Navigate to NFT:', result);
+    // Here you could navigate to the NFT detail page
+    // router.push(`/nft/${result.mint_address}`);
+    
+    // Or set the selected NFT in state to highlight it in the grid
+    // setSelectedNFT(result.mint_address);
+    
+    // Or scroll to the NFT in the current results if it exists
+    const element = document.getElementById(result.mint_address);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   return (
@@ -65,72 +77,31 @@ export default function Home() {
         {/* Animated background grid */}
         <div className="fixed inset-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
         
-        {/* Header */}
+        {/* Header with SearchDropdown */}
         <Header 
           headerBackground={headerBackground}
           query={query}
           isSearching={isSearching}
           isSearchFocused={isSearchFocused}
+          searchResults={dropdownResults}
           onSearchChange={handleSearchChange}
           onSearchFocus={() => setIsSearchFocused(true)}
           onSearchBlur={() => setIsSearchFocused(false)}
           onClearSearch={handleClearSearch}
+          onSearchResultClick={handleSearchResultClick}
         />
 
         {/* Main Content */}
         <main className="pt-16">
-          {/* Trending Collections Section */}
-          <TrendingCollections />
+          {/* Show Trending Collections when no search query */}
+          {!query.trim() && (
+            <TrendingCollections />
+          )}
 
-          {/* Filters and Controls */}
-          <SearchFilters
-            viewMode={viewMode}
-            sortBy={sortBy}
-            resultsCount={totalResults > 0 ? totalResults : searchResults.length}
-            onViewModeChange={setViewMode}
-            onSortChange={setSortBy}
-          />
-
-          {/* NFT Grid */}
-          <NFTGrid
-            searchResults={searchResults}
-            isSearching={isSearching}
-            searchError={searchError}
-            viewMode={viewMode}
-            hasMore={hasMore}
-            hoveredCard={hoveredCard}
-            onHoverStart={setHoveredCard}
-            onHoverEnd={() => setHoveredCard(null)}
-            onClearError={clearError}
-            onClearSearch={handleClearSearch}
-            onLoadMore={loadMore}
-          />
         </main>
 
         {/* Footer */}
         <Footer />
-
-        {/* Floating Action Button */}
-        <motion.button
-          className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg z-40"
-          whileHover={{ scale: 1.1, rotate: 10 }}
-          whileTap={{ scale: 0.9 }}
-          animate={{
-            y: [0, -4, 0],
-            boxShadow: [
-              "0 4px 20px rgba(34, 197, 94, 0.3)",
-              "0 8px 25px rgba(34, 197, 94, 0.4)",
-              "0 4px 20px rgba(34, 197, 94, 0.3)"
-            ]
-          }}
-          transition={{
-            y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-            boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-          }}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        >
-          <TrendingUp className="w-6 h-6 text-black" />
-        </motion.button>
       </div>
     </>
   );
