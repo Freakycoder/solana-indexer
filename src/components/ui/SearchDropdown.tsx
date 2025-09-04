@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Zap, TrendingUp, ExternalLink } from 'lucide-react';
+import { Search, Zap, ExternalLink } from 'lucide-react';
 
 interface NFTSearchResult {
   mint_address: string;
@@ -73,18 +73,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   const hasResults = results.length > 0;
   const shouldShow = isVisible && (hasResults || isSearching || query.length > 0);
 
-  const formatScore = (score: number): string => {
-    return `${(score * 100).toFixed(0)}%`;
-  };
-
-  const formatPrice = (price?: number): string => {
-    if (!price) return 'Not listed';
-    return `${price} SOL`;
-  };
-
-  const truncateAddress = (address: string): string => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   return (
     <AnimatePresence>
@@ -201,51 +189,13 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
                         {/* NFT Details */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-white font-medium text-sm group-hover:text-green-400 transition-colors duration-200 truncate">
-                                {result.nft_name}
-                              </h4>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className="text-gray-400 text-xs truncate">
-                                  {result.collection || 'Unknown Collection'}
-                                </span>
-                                <span className="text-gray-500 text-xs">
-                                  {truncateAddress(result.mint_address)}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 ml-3">
-                              {/* Price */}
-                              {result.price && (
-                                <div className="text-right">
-                                  <div className="flex items-center gap-1">
-                                    <Zap className="w-3 h-3 text-green-400" />
-                                    <span className="text-green-400 font-semibold text-sm">
-                                      {formatPrice(result.price)}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Relevance Score */}
-                              <div className="flex items-center gap-1">
-                                <TrendingUp className="w-3 h-3 text-gray-500" />
-                                <span className="text-gray-500 text-xs">
-                                  {formatScore(result.score)}
-                                </span>
-                              </div>
-
-                              {/* Arrow indicator */}
-                              <motion.div
-                                initial={{ x: 0, opacity: 0.6 }}
-                                whileHover={{ x: 2, opacity: 1 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <ExternalLink className="w-3 h-3 text-gray-500 group-hover:text-green-400 transition-colors duration-200" />
-                              </motion.div>
-                            </div>
+                          <div className="flex flex-col">
+                            <h4 className="text-white font-bold text-base group-hover:text-green-400 transition-colors duration-200 truncate">
+                              {result.nft_name}
+                            </h4>
+                            <span className="text-gray-500 text-sm mt-1 truncate">
+                              {result.mint_address}
+                            </span>
                           </div>
                         </div>
                       </div>
