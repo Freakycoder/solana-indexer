@@ -18,6 +18,7 @@ import {
   FileText,
   Gem
 } from 'lucide-react';
+import axios from 'axios';
 
 interface NFTDetailData {
   mint_address: string;
@@ -39,7 +40,6 @@ interface NFTDetailData {
 }
 
 interface NFTJsonMetadata {
-  name?: string;
   description?: string;
   image?: string;
   rarity?: string;
@@ -85,7 +85,6 @@ const backdropVariants = {
   exit: { opacity: 0 }
 };
 
-
 const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
   nft,
   isOpen,
@@ -96,6 +95,7 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
   const [imageError, setImageError] = useState(false);
   const [jsonMetadata, setJsonMetadata] = useState<NFTJsonMetadata | null>(null);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   // Reset states when NFT changes
   useEffect(() => {
@@ -104,8 +104,8 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
     setCopied(false);
     setJsonMetadata(null);
     setIsLoadingMetadata(false);
+    setImageUrl('');
   }, [nft?.mint_address]);
-
 
   // Fetch JSON metadata when NFT changes
   useEffect(() => {
@@ -115,22 +115,29 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
       setIsLoadingMetadata(true);
       
       try {
-        const response = await fetch(nft.metadata.metadata_uri);
-        if (!response.ok) {
-            console.log("failed to fetch json metadata");
-          throw new Error(`Failed to fetch metadata: ${response.statusText}`);
+        const response = await axios.get(nft.metadata.metadata_uri);
+        
+        const jsonResponse = await response.data;
+        console.log('Fetched JSON metadata:', jsonResponse);
+        
+        const metadata: NFTJsonMetadata = {
+          description: jsonResponse.description,
+          image: jsonResponse.image,
+          rarity: jsonResponse.attributes?.rarity
+        };
+        
+        console.log('Parsed metadata:', metadata);
+        setJsonMetadata(metadata);
+        
+        // Set image URL immediately after fetching metadata
+        if (metadata.image) {
+          setImageUrl(metadata.image);
+          console.log('Setting image URL:', metadata.image);
         }
         
-        const json_response = await response.json();
-        const metadata : NFTJsonMetadata = {
-            name : json_response.name,
-            description : json_response.description,
-            image : json_response.image,
-            rarity : json_response.attributes.rarity
-        };
-        setJsonMetadata(metadata);
       } catch (error) {
         console.error('Error fetching JSON metadata:', error);
+        setImageError(true);
       } finally {
         setIsLoadingMetadata(false);
       }
@@ -151,11 +158,14 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
     }
   };
 
-  
-
-
   const truncateAddress = (address: string) => {
     return `${address.slice(0, 8)}...${address.slice(-8)}`;
+  };
+
+  const handleImageLoad = () => {
+    console.log('Image loaded successfully');
+    setImageLoaded(true);
+    setImageError(false);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -164,10 +174,6 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
     setImageLoaded(true);
   };
 
-  // Get the image URL directly from JSON metadata
-  const getImageUrl = () => {
-    return jsonMetadata?.image || '';
-  };
   if (!nft) return null;
 
   return (
@@ -196,9 +202,6 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-green-500/20">
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-bold text-white truncate">
-                  {nft.metadata.name || 'Unnamed NFT'}
-                </h2>
                 {nft.metadata.symbol && (
                   <p className="text-green-400 text-sm mt-1">{nft.metadata.symbol}</p>
                 )}
@@ -220,22 +223,22 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
               {/* Left Side - Image and Description */}
               <div className="lg:w-1/2 p-6 space-y-6 bg-gradient-to-br from-green-500/5 to-transparent">
-                {/* Image Container - Smaller */}
+                {/* Image Container */}
                 <div className="relative w-full aspect-square max-w-sm mx-auto">
                   <motion.div
                     className="relative w-full h-full rounded-2xl overflow-hidden bg-gray-900/50 border border-green-500/20"
                     layout
                   >
-                    {getImageUrl() && !imageError ? (
+                    {imageUrl && !imageError ? (
                       <>
                         <img
-                          src={getImageUrl()}
-                          alt={nft.metadata.name || 'NFT'}
+                          src={imageUrl}
                           className={`w-full h-full object-cover transition-all duration-500 ${
                             imageLoaded ? 'opacity-100' : 'opacity-0'
                           }`}
-                          onLoad={() => setImageLoaded(true)}
+                          onLoad={handleImageLoad}
                           onError={handleImageError}
+                          crossOrigin="anonymous"
                         />
                         
                         {!imageLoaded && (
@@ -249,7 +252,7 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
                         )}
 
                         {/* Rarity Badge - Top Left */}
-                        {jsonMetadata?.rarity && (
+                        {jsonMetadata?.rarity && imageLoaded && (
                           <motion.div
                             className="absolute top-3 left-3 px-3 py-1.5 rounded-xl bg-purple-500/90 backdrop-blur-sm border border-purple-500/50 shadow-lg"
                             initial={{ opacity: 0, scale: 0 }}
@@ -259,7 +262,7 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
                             <div className="flex items-center gap-1.5">
                               <Gem className="w-3 h-3 text-purple-200" />
                               <span className="text-purple-100 font-semibold text-xs uppercase tracking-wider">
-                                {jsonMetadata?.rarity}
+                                {jsonMetadata.rarity}
                               </span>
                             </div>
                           </motion.div>
@@ -279,26 +282,24 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 200 }}
                           >
-                            <Zap className="w-20 h-20 text-green-400/50 mx-auto mb-4" />
+                            {isLoadingMetadata ? (
+                              <motion.div
+                                className="w-12 h-12 border-3 border-green-500/30 border-t-green-500 rounded-full mx-auto mb-4"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              />
+                            ) : (
+                              <Zap className="w-20 h-20 text-green-400/50 mx-auto mb-4" />
+                            )}
                           </motion.div>
-                          <p className="text-gray-500">No image available</p>
+                          <p className="text-gray-500">
+                            {isLoadingMetadata ? 'Loading image...' : 'No image available'}
+                          </p>
                           <p className="text-gray-600 text-sm mt-1">
                             {nft.metadata.name || 'NFT'}
                           </p>
                         </div>
                       </div>
-                    )}
-
-                    {/* Fullscreen button */}
-                    {imageLoaded && !imageError && (
-                      <motion.button
-                        className="absolute bottom-4 right-4 p-2 rounded-xl bg-black/70 backdrop-blur-sm border border-green-500/30 text-white hover:bg-green-500/20 transition-all duration-200"
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1, scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </motion.button>
                     )}
                   </motion.div>
                 </div>
@@ -357,7 +358,6 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
                       </div>
                     </div>
                   </motion.div>
-
 
                   {/* Metadata Loading State */}
                   {isLoadingMetadata && (
@@ -468,6 +468,7 @@ const NFTDetailModal: React.FC<NFTDetailModalProps> = ({
                         </p>
                       </div>
                     )}
+
                     {/* Metadata URI */}
                     {nft.metadata.metadata_uri && (
                       <div className="bg-black/50 border border-green-500/20 rounded-xl p-4">
