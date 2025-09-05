@@ -27,11 +27,10 @@ const itemVariants = {
   }
 };
 
-
 export default function HeroSection({}: HeroSectionProps) {
   return (
     <motion.section 
-      className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden"
+      className="relative py-16 px-4 sm:px-6 lg:px-8 overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
@@ -90,49 +89,8 @@ export default function HeroSection({}: HeroSectionProps) {
           animate="visible"
           transition={{ delay: 0.4 }}
         >
-          The most advanced NFT marketplace on Solana. Search, discover, and trade with lightning-fast speed and zero compromises.
+          Search, discover, and explore NFTs on Solana with lightning-fast speed and precision.
         </motion.p>
-
-
-        {/* Quick Stats */}
-        {/* <motion.div 
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.6 }}
-        >
-          {[
-            { label: 'Total Volume', value: '2.4M SOL', icon: BarChart3 },
-            { label: 'Active Collections', value: '15,432', icon: Star },
-            { label: 'Total NFTs', value: '1.2M+', icon: TrendingUp },
-            { label: 'Daily Traders', value: '8,942', icon: Activity }
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              className="bg-black/30 backdrop-blur-sm border border-green-500/20 rounded-xl p-6 text-center group hover:border-green-500/50 transition-all duration-300"
-              variants={itemVariants}
-              whileHover={{ scale: 1.05, y: -5 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <motion.div
-                className="flex justify-center mb-3"
-                whileHover={{ rotate: 10, scale: 1.1 }}
-              >
-                <stat.icon className="w-8 h-8 text-green-400" />
-              </motion.div>
-              <motion.div 
-                className="text-2xl font-bold text-white mb-1"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 + index * 0.1 }}
-              >
-                {stat.value}
-              </motion.div>
-              <div className="text-gray-400 text-sm">{stat.label}</div>
-            </motion.div>
-          ))}
-        </motion.div> */}
       </div>
     </motion.section>
   );
