@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Star, Activity, BarChart3 } from 'lucide-react';
 
 interface HeroSectionProps {}
 

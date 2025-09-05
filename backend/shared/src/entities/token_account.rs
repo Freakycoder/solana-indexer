@@ -11,13 +11,13 @@ pub struct Model {
     #[sea_orm(unique)]
     pub mint_address: String,
     pub owner: String,
-    pub amount: u64,
+    pub amount: i64,
     
     #[sea_orm(column_type = "Text", nullable)]
     pub delegate: Option<String>,
     
     pub delegated_amount: String,
-    pub state: u8, // 0 = Uninitialized, 1 = Initialized, 2 = Frozen
+    pub state: i16, // 0 = Uninitialized, 1 = Initialized, 2 = Frozen
     
     #[sea_orm(column_type = "Text", nullable)]
     pub close_authority: Option<String>,

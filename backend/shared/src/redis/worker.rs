@@ -154,7 +154,7 @@ impl QueueWorker {
     async fn save_mint_to_db(&self, mint_data: MintData) -> Result<Model, DbErr> {
         let mint_model = ActiveModel {
             mint_address: Set(mint_data.mint_address),
-            decimal: Set(mint_data.decimal),
+            decimal: Set(mint_data.decimal.into()),
             supply: Set(mint_data.supply),
             mint_authority: Set(Some(mint_data.mint_authority)),
             freeze_authority: Set(mint_data.freeze_authority),
@@ -174,7 +174,7 @@ impl QueueWorker {
     ) -> Result<NftModel, DbErr> {
         let clean_name = metadata_data.name.replace('\0', "").trim().to_string();
         let clean_symbol = metadata_data.symbol.map(|s| s.replace('\0', "").trim().to_string());
-        let clean_uri = metadata_data.uri.replace('\0', "").trim().to_string();
+        let clean_uri = metadata_data.metadata_uri.replace('\0', "").trim().to_string();
         let clean_update_authority = metadata_data.update_authority.replace('\0', "").trim().to_string();
         
         let metadata_model = NftActiveModel {
@@ -182,7 +182,7 @@ impl QueueWorker {
             mint_address: Set(mint_address),
             name: Set(clean_name),
             symbol: Set(clean_symbol),
-            uri: Set(clean_uri),
+            metadata_uri: Set(clean_uri),
             seller_fee_basis_points: Set(metadata_data.seller_fee_basis_points),
             update_authority: Set(clean_update_authority),
             primary_sale_happened: Set(metadata_data.primary_sale_happened),

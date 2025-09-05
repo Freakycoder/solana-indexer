@@ -6,7 +6,7 @@ pub struct Metadata{
     pub metadata_address : Option<String>,
     pub name : String,
     pub symbol : Option<String>,
-    pub uri : String,
+    pub metadata_uri : String,
     pub seller_fee_basis_points : i16,
     pub update_authority : String,
     pub token_standard : Option<TokenStandard>,

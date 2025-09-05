@@ -3,6 +3,7 @@ members = [
     "api_server",
     "grpc_listener", 
     "queue_worker",
-    "shared"
+    "shared",
+    "shared/migration"
 ]
 resolver = "2"

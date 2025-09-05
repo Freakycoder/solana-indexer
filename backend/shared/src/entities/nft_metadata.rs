@@ -13,7 +13,7 @@ pub struct Model{
     #[sea_orm(column_type = "Text")]
     pub symbol : Option<String>,
     #[sea_orm(column_type = "Text")]
-    pub uri : String,
+    pub metadata_uri : String,
     pub seller_fee_basis_points : i16,
     pub update_authority : String,
     pub primary_sale_happened : bool,

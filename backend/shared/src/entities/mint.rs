@@ -7,8 +7,8 @@ pub struct Model {
     pub id: Uuid,
     #[sea_orm(unique)]
     pub mint_address: String,
-    pub decimal: u8,
-    pub supply: u64,
+    pub decimal: i16,
+    pub supply: i64,
     #[sea_orm(column_type = "Text", nullable)]
     pub mint_authority: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]

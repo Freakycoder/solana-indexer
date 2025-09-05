@@ -42,8 +42,7 @@ const setCachedData = (data: Record<string, TrendingCollection[]>, timestamp: nu
 const CollectionCard = React.memo<{ 
   collection: TrendingCollection; 
   index: number;
-  timeframe: string;
-}>(({ collection, index, timeframe }) => {
+}>(({ collection, index }) => {
   const formatSOL = useCallback((amount: number | undefined): string => {
     if (!amount) return '0 SOL';
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M SOL`;
@@ -331,7 +330,6 @@ const TrendingCollections: React.FC = React.memo(() => {
                   key={`${collection.symbol}-${timeframe}-${Math.floor(index / collections.length)}`}
                   collection={collection}
                   index={index % collections.length}
-                  timeframe={timeframe}
                 />
               ))}
             </motion.div>
