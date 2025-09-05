@@ -18,8 +18,8 @@ impl MigrationTrait for Migration {
                             .default(Expr::cust("gen_random_uuid()")),
                     )
                     .col(string_uniq(Mint::MintAddress))
-                    .col(tiny_unsigned(Mint::Decimal))
-                    .col(big_unsigned(Mint::Supply))
+                    .col(small_integer(Mint::Decimal))
+                    .col(big_integer(Mint::Supply))
                     .col(text_null(Mint::MintAuthority))
                     .col(text_null(Mint::FreezeAuthority))
                     .col(boolean(Mint::IsInitialized))
@@ -47,7 +47,7 @@ impl MigrationTrait for Migration {
                     .col(string_null(NftMetadata::MetadataAddress)) // NULLABLE, no unique constraint
                     .col(text(NftMetadata::Name))
                     .col(text(NftMetadata::Symbol))
-                    .col(text(NftMetadata::Uri))
+                    .col(text(NftMetadata::MetadataUri))
                     .col(small_integer(NftMetadata::SellerFeeBasisPoints))
                     .col(string(NftMetadata::UpdateAuthority))
                     .col(boolean(NftMetadata::PrimarySaleHappened))
@@ -188,10 +188,10 @@ impl MigrationTrait for Migration {
                     .col(string_uniq(TokenAccounts::TokenAddress))
                     .col(string_uniq(TokenAccounts::MintAddress))
                     .col(string(TokenAccounts::Owner))
-                    .col(big_unsigned(TokenAccounts::Amount))
+                    .col(big_integer(TokenAccounts::Amount))
                     .col(text_null(TokenAccounts::Delegate))
                     .col(string(TokenAccounts::DelegatedAmount))
-                    .col(tiny_unsigned(TokenAccounts::State))
+                    .col(small_integer(TokenAccounts::State))
                     .col(text_null(TokenAccounts::CloseAuthority))
                     .col(boolean(TokenAccounts::IsNative))
                     .col(string(TokenAccounts::RentExemptReserve))
@@ -261,7 +261,7 @@ enum NftMetadata {
     MetadataAddress,
     Name,
     Symbol,
-    Uri,
+    MetadataUri,
     SellerFeeBasisPoints,
     UpdateAuthority,
     PrimarySaleHappened,
