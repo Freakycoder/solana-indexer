@@ -7,7 +7,7 @@ use shared::{
         mint::{MintResponse, PartialMetadata},
     },
     ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter,
-    Json, Path, Router, State, StatusCode, Uuid,
+    Json, Path, Router, State, StatusCode,
     get, SPL_TOKEN_PROGRAM,
 };
 use tower_http::cors::{CorsLayer};
@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Database::connect(env::var("DATABASE_URL").expect("DATABASE_URL must be set")).await?;
 
     let app = Router::new()
-        .route("/details/{mint_id}", get(get_details))
+        .route("/details/{mint_address}", get(get_details))
         .route("/search/nfts/{query}", get(search_nfts))
         .with_state((db, elasticsearch))
         .layer(CorsLayer::very_permissive());
@@ -46,12 +46,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 pub async fn get_details(
     State((db, _)): State<(DatabaseConnection, ElasticSearchClient)>,
-    Path(mint_id): Path<Uuid>,
+    Path(mint_address): Path<String>,
 ) -> Json<MintResponse> {
-    let mint_details = match mint::Entity::find_by_id(mint_id).one(&db).await {
+    let mint_details = match mint::Entity::find()
+    .filter(mint::Column::MintAddress.eq(mint_address.clone()))
+    .one(&db)
+    .await {
         Ok(Some(mint_data)) => mint_data,
         Ok(None) => {
-            println!("Mint data not found for id: {}", mint_id);
+            println!("Mint data not found for address: {}", mint_address);
             return Json(MintResponse {
                 mint_address: String::new(),
                 owner: SPL_TOKEN_PROGRAM.to_string(),
@@ -63,7 +66,7 @@ pub async fn get_details(
                 metadata: PartialMetadata {
                     name: None,
                     symbol: None,
-                    uri: None,
+                    metadata_uri: None,
                     seller_fee_basis_points: 0,
                     update_authority: None,
                     is_mutable: false,
@@ -84,7 +87,7 @@ pub async fn get_details(
                 metadata: PartialMetadata {
                     name: None,
                     symbol: None,
-                    uri: None,
+                    metadata_uri: None,
                     seller_fee_basis_points: 0,
                     update_authority: None,
                     is_mutable: false,
@@ -95,15 +98,15 @@ pub async fn get_details(
     };
 
     let mint_metadata = match nft_metadata::Entity::find()
-        .filter(nft_metadata::Column::MintAddress.eq(&mint_details.mint_address))
+        .filter(nft_metadata::Column::MintAddress.eq(mint_address.clone()))
         .one(&db)
         .await
     {
         Ok(metadata_opt) => metadata_opt,
         Err(db_err) => {
             println!(
-                "Database error occurred while finding metadata {} for the mint id: {}",
-                db_err, mint_id
+                "Database error occurred while finding metadata {} for the mint address: {}",
+                db_err, mint_address
             );
             return Json(MintResponse {
                 mint_address: mint_details.mint_address,
@@ -116,7 +119,7 @@ pub async fn get_details(
                 metadata: PartialMetadata {
                     name: None,
                     symbol: None,
-                    uri: None,
+                    metadata_uri: None,
                     seller_fee_basis_points: 0,
                     update_authority: None,
                     is_mutable: false,
@@ -140,7 +143,7 @@ pub async fn get_details(
                 metadata: PartialMetadata {
                     name: Some(metadata.name),
                     symbol: metadata.symbol,
-                    uri: Some(metadata.uri),
+                    metadata_uri: Some(metadata.metadata_uri),
                     seller_fee_basis_points: metadata.seller_fee_basis_points,
                     update_authority: Some(metadata.update_authority),
                     is_mutable: metadata.is_mutable,
@@ -161,7 +164,7 @@ pub async fn get_details(
                 metadata: PartialMetadata {
                     name: None,
                     symbol: None,
-                    uri: None,
+                    metadata_uri: None,
                     seller_fee_basis_points: 0,
                     update_authority: None,
                     is_mutable: false,
