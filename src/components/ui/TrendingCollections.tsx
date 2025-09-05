@@ -117,7 +117,6 @@ const TrendingCollections: React.FC = React.memo(() => {
     '7d': useRef<HTMLDivElement>(null),
   };
 
-
   // Fetch data - only runs on first component mount if no valid cache exists
   useEffect(() => {
     const fetchAllTimeframes = async () => {
@@ -289,23 +288,17 @@ const TrendingCollections: React.FC = React.memo(() => {
     return (
       <section className="py-8 sm:py-12">
         <div className="max-w-full px-4 sm:px-6">
-          {/* Section Header */}
+          {/* Section Header - Updated with minimal text */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="flex items-center justify-center gap-3 mb-6 sm:mb-8"
           >
-            <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white text-center">
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white text-center">
               {title}
             </h2>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-gray-400 text-xs sm:text-sm">
-                {direction}
-              </span>
-            </div>
           </motion.div>
 
           {/* Scrolling Container */}
@@ -359,7 +352,7 @@ const TrendingCollections: React.FC = React.memo(() => {
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
                 Popular Collections
               </h2>
-              <p className="text-gray-300 text-lg">Loading the hottest NFT collections on Solana...</p>
+              <p className="text-gray-300 text-lg">Loading trending collections...</p>
             </motion.div>
 
             {/* Loading skeleton for 3 sections */}
@@ -425,44 +418,27 @@ const TrendingCollections: React.FC = React.memo(() => {
         }}
       />
       
-      {/* Main header */}
-      <section className="pt-12 pb-8 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 flex items-center justify-center gap-3 sm:gap-4">
-              <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-400" />
-              Popular Collections
-            </h1>
-            <p className="text-gray-300 text-base sm:text-lg max-w-2xl mx-auto">
-              Discover the hottest NFT collections on Solana across different timeframes
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Three horizontal scroll sections */}
+
+      {/* Three horizontal scroll sections - Updated with minimal titles */}
       <div className="space-y-8 sm:space-y-12">
         <ScrollSection 
           timeframe="1h" 
-          title="🔥 Hot Right Now - 1 Hour" 
+          title="Trending Now" 
           icon={Clock} 
           direction="left" 
         />
         
         <ScrollSection 
           timeframe="1d" 
-          title="📈 Daily Trending - 24 Hours" 
+          title="Daily Leaders" 
           icon={Calendar} 
           direction="right" 
         />
         
         <ScrollSection 
           timeframe="7d" 
-          title="⭐ Weekly Champions - 7 Days" 
+          title="Weekly Champions" 
           icon={CalendarDays} 
           direction="left" 
         />
@@ -487,7 +463,6 @@ const TrendingCollections: React.FC = React.memo(() => {
               >
                 Magic Eden
               </a>
-              {' '}• Cached for 5 minutes
             </p>
           </motion.div>
         </div>
